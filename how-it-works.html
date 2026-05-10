@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — How It Works for Insurers & Legal Teams</title>
+  <meta name="description" content="How April Gate's tamper-evident cold chain verification works for insurance companies and legal proceedings. No technical background required." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Share+Tech+Mono&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #f8f6f1;
+      --bg2:      #f0ede4;
+      --surface:  #ffffff;
+      --border:   #ddd8cc;
+      --ink:      #1a1814;
+      --ink2:     #4a4540;
+      --ink3:     #7a746c;
+      --accent:   #00614a;
+      --accent2:  #c8860a;
+      --accent3:  #1a3a6b;
+      --danger:   #8b1a1a;
+      --serif:    'Playfair Display', Georgia, serif;
+      --mono:     'Share Tech Mono', monospace;
+      --sans:     'Lato', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-weight: 300;
+      line-height: 1.7;
+    }
+
+    /* ── PAPER TEXTURE ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      background: rgba(248,246,241,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      color: var(--ink2);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 5rem 2rem 3rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .hero-label::before {
+      content: '';
+      display: block;
+      width: 2rem;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-lead {
+      font-size: 1.15rem;
+      color: var(--ink2);
+      max-width: 640px;
+      line-height: 1.8;
+      margin-bottom: 2.5rem;
+      border-left: 3px solid var(--accent2);
+      padding-left: 1.5rem;
+    }
+
+    /* Audience tabs */
+    .audience-tabs {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      width: fit-content;
+      margin-bottom: 4rem;
+    }
+
+    .tab-btn {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      padding: 0.65rem 1.5rem;
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--border);
+      color: var(--ink2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:last-child { border-right: none; }
+
+    .tab-btn.active {
+      background: var(--ink);
+      color: #f8f6f1;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: var(--bg2);
+    }
+
+    /* ── SECTIONS ── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── THE SIMPLE STORY ── */
+    .simple-story {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 3rem;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    .simple-story::before {
+      content: '"';
+      font-family: var(--serif);
+      font-size: 8rem;
+      color: var(--accent);
+      opacity: 0.12;
+      position: absolute;
+      top: -1rem;
+      left: 1.5rem;
+      line-height: 1;
+    }
+
+    .simple-story h2 {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 1rem;
+    }
+
+    .simple-story p {
+      font-size: 1.05rem;
+      color: var(--ink2);
+      line-height: 1.85;
+      margin-bottom: 1rem;
+    }
+
+    .simple-story p:last-child { margin-bottom: 0; }
+
+    .simple-story strong { color: var(--ink); font-weight: 700; }
+
+    /* ── ANALOGY BOX ── */
+    .analogy {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent2);
+      padding: 1.5rem 2rem;
+      margin: 2rem 0;
+    }
+
+    .analogy-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent2);
+      letter-spacing: 0.2em;
+      margin-bottom: 0.5rem;
+    }
+
+    .analogy p {
+      font-size: 1rem;
+      color: var(--ink);
+      line-height: 1.7;
+    }
+
+    /* ── STEPS ── */
+    .steps {
+      margin: 2.5rem 0;
+      counter-reset: steps;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step:last-child { border-bottom: none; }
+
+    .step-num {
+      counter-increment: steps;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: var(--ink);
+      color: var(--bg);
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.2rem;
+    }
+
+    .step-body h3 {
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.4rem;
+    }
+
+    .step-body p {
+      font-size: 0.95rem;
+      color: var(--ink2);
+      line-height: 1.7;
+    }
+
+    /* ── COMPARISON TABLE ── */
+    .comparison {
+      margin: 2.5rem 0;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .comparison-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      background: var(--ink);
+      color: var(--bg);
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-header div {
+      padding: 0.85rem 1.25rem;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .comparison-header div:last-child { border-right: none; }
+
+    .comparison-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .comparison-row:nth-child(even) { background: var(--bg2); }
+
+    .comparison-row div {
+      padding: 0.85rem 1.25rem;
+      border-right: 1px solid var(--border);
+      color: var(--ink2);
+      line-height: 1.5;
+    }
+
+    .comparison-row div:first-child {
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .comparison-row div:last-child {
+      border-right: none;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ── CASE LAW ── */
+    .section-title {
+      font-family: var(--serif);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .section-intro {
+      font-size: 1rem;
+      color: var(--ink2);
+      line-height: 1.7;
+      margin-bottom: 2rem;
+      max-width: 640px;
+    }
+
+    .case-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .case-card:hover { border-color: var(--accent3); }
+
+    .case-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent3);
+    }
+
+    .case-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .case-name {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      font-style: italic;
+    }
+
+    .case-year {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent3);
+      letter-spacing: 0.15em;
+      border: 1px solid rgba(26,58,107,0.2);
+      padding: 0.2rem 0.5rem;
+      white-space: nowrap;
+    }
+
+    .case-court {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--ink3);
+      margin-bottom: 0.6rem;
+      letter-spacing: 0.03em;
+    }
+
+    .case-summary {
+      font-size: 0.9rem;
+      color: var(--ink2);
+      line-height: 1.65;
+      margin-bottom: 0.75rem;
+    }
+
+    .case-relevance {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 700;
+      padding: 0.4rem 0.75rem;
+      background: rgba(0,97,74,0.06);
+      border: 1px solid rgba(0,97,74,0.15);
+      display: inline-block;
+      margin-bottom: 0.75rem;
+    }
+
+    .case-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--accent3);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(26,58,107,0.3);
+      padding-bottom: 0.1rem;
+      transition: all 0.2s;
+    }
+
+    .case-link:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Legislation cards */
+    .legislation-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .leg-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+    }
+
+    .leg-jurisdiction {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--accent2);
+      letter-spacing: 0.15em;
+      margin-bottom: 0.4rem;
+    }
+
+    .leg-title {
+      font-family: var(--serif);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.4rem;
+    }
+
+    .leg-desc {
+      font-size: 0.82rem;
+      color: var(--ink2);
+      line-height: 1.6;
+    }
+
+    /* ── FAQ ── */
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 0;
+    }
+
+    .faq-q {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .faq-q::after {
+      content: '+';
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .faq-a {
+      font-size: 0.95rem;
+      color: var(--ink2);
+      line-height: 1.75;
+    }
+
+    .faq-a a {
+      color: var(--accent3);
+      text-decoration: underline;
+    }
+
+    /* ── CTA ── */
+    .cta-block {
+      background: var(--ink);
+      padding: 3rem;
+      margin: 4rem 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .cta-block h2 {
+      font-family: var(--serif);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--bg);
+      margin-bottom: 0.5rem;
+    }
+
+    .cta-block p {
+      font-size: 0.95rem;
+      color: rgba(248,246,241,0.65);
+      line-height: 1.6;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent);
+      color: var(--bg);
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 1rem 2rem;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .cta-btn:hover { background: #007a5e; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--ink3);
+      letter-spacing: 0.1em;
+      position: relative;
+      z-index: 1;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .legislation-grid { grid-template-columns: 1fr; }
+      .cta-block { grid-template-columns: 1fr; }
+      .comparison-header,
+      .comparison-row { grid-template-columns: 1fr; }
+      .comparison-header div:not(:first-child),
+      .comparison-row div:not(:first-child) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">APRIL // GATE</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="verify.html">Verify</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="whitepaper.pdf" target="_blank" style="color:var(--accent);">Whitepaper</a></li>
+      <li><a href="mailto:irina@aprilgatehq.com">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-label">Plain Language Overview</div>
+    <h1>How April Gate works for <em>insurers, lawyers,</em> and the courtroom</h1>
+    <p class="hero-lead">
+      No blockchain expertise required. This page explains what April Gate does,
+      why it matters for claims disputes, and how courts are already treating
+      this kind of evidence — in plain English.
+    </p>
+
+    <div class="audience-tabs">
+      <button class="tab-btn active" onclick="switchTab('insurer')">For Insurers</button>
+      <button class="tab-btn" onclick="switchTab('legal')">For Legal Teams</button>
+      <button class="tab-btn" onclick="switchTab('caselaw')">Case Law & Legislation</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+
+    <!-- ── INSURER TAB ── -->
+    <div class="tab-content active" id="tab-insurer">
+
+      <div class="simple-story">
+        <h2>The problem with cold chain disputes today</h2>
+        <p>
+          A pharmaceutical distributor files a claim: a $400,000 shipment of biologics
+          arrived spoiled. The insurer investigates. The logistics company produces
+          temperature logs showing everything was fine. The distributor's records
+          show a different story. <strong>Both records are on mutable servers.
+          Either could have been altered. Nobody can prove anything conclusively.</strong>
+        </p>
+        <p>
+          Lawyers get involved. Discovery takes months. Expert witnesses are hired on
+          both sides. The dispute costs more in legal fees than the claim itself.
+          This happens hundreds of times a year across the pharmaceutical cold chain.
+        </p>
+      </div>
+
+      <div class="analogy">
+        <div class="analogy-label">// The Analogy</div>
+        <p>
+          Think of April Gate like <strong>Progressive's Snapshot device</strong> —
+          except instead of tracking driving behavior for auto insurance,
+          it tracks temperature conditions for pharmaceutical cargo.
+          Except unlike Snapshot, the data goes to a public mathematical ledger
+          that <em>nobody controls and nobody can alter.</em>
+          Not April Gate. Not the shipper. Not the insurer. Not a court order.
+        </p>
+      </div>
+
+      <h2 class="section-title" style="margin-top:2.5rem">How April Gate resolves disputes</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Sensors are deployed with hardware keys</h3>
+            <p>Each sensor contains a tamper-proof chip (the same technology used in credit card EMV chips). A private key is burned into the chip at manufacture and <strong>can never be extracted</strong> — not even by April Gate. Every temperature reading is signed by that key, proving it came from that specific physical device.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Multiple sensors reach agreement</h3>
+            <p>Shipments carry multiple sensors. They communicate with each other and must agree on readings. A single compromised or malfunctioning sensor cannot corrupt the record — the others detect the disagreement automatically and flag it.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3>A mathematical certificate is generated</h3>
+            <p>Instead of uploading thousands of raw readings, the sensors produce a single <strong>mathematical certificate</strong> that proves the temperature stayed within range — without revealing the exact readings, timing, or routing (protecting your insured's competitive information).</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h3>The certificate is written to a public blockchain</h3>
+            <p>The certificate is submitted to the Solana blockchain — a public ledger that operates like a global notary. Once written, <strong>it cannot be altered, backdated, or deleted</strong> by any party. It costs less than a fraction of a cent to submit and is verifiable by anyone, anywhere, forever.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h3>Disputes are resolved in hours, not months</h3>
+            <p>When a claim arises, your adjuster pulls up the shipment record. The certificate either shows valid conditions or it doesn't. <strong>There is no argument to have.</strong> The math has already decided.</p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <h2 class="section-title">What this means for your Risk Rewards Program</h2>
+      <p class="section-intro">April Gate is designed to integrate directly with insurer partner programs — similar to how Parsyl, Progressive, and others use sensor data to price and reward verified risk reduction.</p>
+
+      <div class="comparison">
+        <div class="comparison-header">
+          <div>Situation</div>
+          <div>Without April Gate</div>
+          <div>With April Gate</div>
+        </div>
+        <div class="comparison-row">
+          <div>Cold chain dispute</div>
+          <div>Months of legal discovery, dueling experts, uncertain outcome</div>
+          <div>Hours — one verifiable certificate, no argument possible</div>
+        </div>
+        <div class="comparison-row">
+          <div>Sensor tampering</div>
+          <div>Undetectable — logs altered after the fact</div>
+          <div>Immediately flagged — tamper events recorded on-chain with timestamp</div>
+        </div>
+        <div class="comparison-row">
+          <div>Connectivity gap</div>
+          <div>Missing data — no way to know what happened</div>
+          <div>Proven validity — mathematical proof covers the gap period</div>
+        </div>
+        <div class="comparison-row">
+          <div>Fraud claim</div>
+          <div>He-said-she-said, expensive investigation</div>
+          <div>Blockchain record is the investigation — instant, definitive</div>
+        </div>
+        <div class="comparison-row">
+          <div>Premium pricing</div>
+          <div>Based on historical averages and assumptions</div>
+          <div>Based on verified real-time compliance data per shipment</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── LEGAL TAB ── -->
+    <div class="tab-content" id="tab-legal">
+
+      <div class="simple-story">
+        <h2>The evidentiary question courts will face</h2>
+        <p>
+          When a pharmaceutical cold chain dispute reaches litigation, the central
+          question is: <strong>what actually happened to the shipment?</strong>
+          Traditional evidence — centralized logs, witness testimony, vendor records —
+          is inherently challengeable. Any competent attorney can argue that
+          server-side records were altered, that witnesses are biased, or that
+          the chain of custody was broken.
+        </p>
+        <p>
+          April Gate produces a fundamentally different category of evidence:
+          <strong>a mathematical proof written to a public, immutable ledger.</strong>
+          The question is not whether you trust the company. The question is
+          whether you trust mathematics. Courts are increasingly answering: yes.
+        </p>
+      </div>
+
+      <div class="analogy">
+        <div class="analogy-label">// The Courtroom Analogy</div>
+        <p>
+          Consider how courts treat <strong>DNA evidence</strong>. Jurors do not
+          understand polymerase chain reaction or STR analysis. They understand
+          the expert who says: <em>"The probability this DNA came from someone
+          other than the defendant is one in four billion."</em>
+          The science is trusted. The conclusion is acted upon.
+          April Gate's mathematical certificates work the same way.
+          The expert says: <em>"This certificate proves the temperature
+          stayed within range. It is mathematically impossible to generate
+          this certificate without the conditions actually having occurred."</em>
+        </p>
+      </div>
+
+      <h2 class="section-title" style="margin-top:2.5rem">How blockchain evidence enters court</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3>Authentication under Federal Rules of Evidence 902(13) and 902(14)</h3>
+            <p>Amended in 2017, these rules allow self-authentication of electronic records generated by an electronic process or system that produces accurate results — which blockchain records satisfy. The immutability and cryptographic provability of blockchain records align directly with these authentication standards.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3>Hearsay classification</h3>
+            <p>Blockchain records produced automatically without human intervention — such as sensor readings and consensus proofs — may qualify as non-hearsay or fall under existing hearsay exceptions (business records, machine-generated records). Legal scholarship and emerging case law increasingly support this categorization. See the Case Law tab for specific examples.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3>Expert witness testimony</h3>
+            <p>As with DNA and forensic accounting, expert witnesses explain the technology to the trier of fact in plain language. The 2024 <em>United States v. Sterlingov</em> ruling (D.D.C.) confirmed that blockchain analytics satisfies the Daubert reliability standard for expert testimony — setting precedent that blockchain evidence meets the bar for scientific admissibility.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h3>The "garbage in, garbage out" challenge</h3>
+            <p>The primary legal challenge to blockchain evidence is that it proves a record exists — but not that the underlying data was accurate when entered. April Gate addresses this specifically: hardware-signed sensor readings with tamper-evident chips create a verifiable chain of custody from the physical sensor to the on-chain proof, closing the gap that opposing counsel typically exploits.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="analogy" style="border-left-color: var(--danger); margin-top:2rem;">
+        <div class="analogy-label" style="color:var(--danger)">// The Key Legal Differentiator</div>
+        <p>
+          Competing cold chain monitoring systems store data on centralized servers.
+          In discovery, those records can be challenged as mutable — an administrator
+          could have altered them. April Gate's records are written to a public blockchain
+          that <strong>no party controls</strong>. The opposing expert cannot argue
+          that April Gate altered the record. The math is the record.
+          This is the evidentiary distinction that resolves disputes rather than
+          prolonging them.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- ── CASE LAW TAB ── -->
+    <div class="tab-content" id="tab-caselaw">
+
+      <p class="section-intro">
+        Courts and legislatures are actively establishing the legal framework for
+        blockchain evidence. The following cases and statutes are directly relevant
+        to how April Gate's records would be treated in litigation.
+        This list is provided for informational purposes — consult qualified
+        legal counsel for advice specific to your jurisdiction.
+      </p>
+
+      <h2 class="section-title">Landmark US Cases</h2>
+
+      <div class="case-card">
+        <div class="case-header">
+          <div class="case-name">United States v. Sterlingov</div>
+          <div class="case-year">D.D.C. · 2024</div>
+        </div>
+        <div class="case-court">U.S. District Court, District of Columbia · Judge Randolph Moss</div>
+        <div class="case-relevance">Establishes blockchain analytics admissibility standard</div>
+        <p class="case-summary">
+          Judge Moss issued a landmark Daubert ruling confirming that blockchain analytics
+          methodology is reliable and admissible as substantive evidence in federal court.
+          The defense challenged Chainalysis blockchain analysis as a "black box algorithm" —
+          the court rejected this, holding that the methods are transparent, tested, and
+          meet the reliability threshold required for expert testimony. This ruling sets
+          direct precedent for blockchain-based evidence in US federal courts.
+        </p>
+        <a class="case-link" href="https://www.chainalysis.com/blog/bitcoin-fog-daubert-hearing-chainalysis/" target="_blank">
+          Read analysis → Chainalysis
+        </a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-header">
+          <div class="case-name">United States v. Crater</div>
+          <div class="case-year">1st Cir. · 2024</div>
+        </div>
+        <div class="case-court">U.S. Court of Appeals, First Circuit · 93 F.4th 581</div>
+        <div class="case-relevance">Appellate court upholds blockchain expert testimony</div>
+        <p class="case-summary">
+          The First Circuit upheld the trial court's admission of expert testimony from
+          a blockchain analytics firm (CipherTrace) to establish facts about cryptocurrency
+          transactions. The appellate court found no error in admitting this evidence,
+          reinforcing that blockchain analysis by qualified experts satisfies evidentiary
+          standards at both the trial and appellate level.
+        </p>
+        <a class="case-link" href="https://www.nortonrosefulbright.com/-/media/files/nrf/nrfweb/knowledge-pdfs/us_59864_reprint--when-blockchain-analytics-meet-the-daubert-test_r3.pdf" target="_blank">
+          Read Norton Rose Fulbright analysis →
+        </a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-header">
+          <div class="case-name">United States v. Costanzo</div>
+          <div class="case-year">2020</div>
+        </div>
+        <div class="case-court">Federal District Court</div>
+        <div class="case-relevance">Early precedent for blockchain transaction evidence</div>
+        <p class="case-summary">
+          One of the earlier federal cases to admit blockchain transaction records
+          as evidence in a money laundering prosecution. Expert testimony from law
+          enforcement personnel familiar with blockchain analysis was admitted,
+          establishing an early precedent that blockchain records can support
+          factual determinations in federal litigation.
+        </p>
+        <a class="case-link" href="https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2024.1306058/full" target="_blank">
+          Read academic analysis → Frontiers in Blockchain
+        </a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-header">
+          <div class="case-name">Tribunal Judiciaire de Marseille</div>
+          <div class="case-year">March 2025</div>
+        </div>
+        <div class="case-court">France — Civil Court · European First</div>
+        <div class="case-relevance">Blockchain timestamp accepted as valid legal proof</div>
+        <p class="case-summary">
+          In a fashion design copyright dispute, the Marseille court recognized
+          blockchain timestamping as valid proof of copyright anteriority —
+          the first European court to do so. The court relied on blockchain records
+          over traditional bailiff certification dates, establishing that immutable
+          blockchain timestamps carry evidentiary weight equivalent to or greater
+          than traditional notarization in at least some European jurisdictions.
+        </p>
+        <a class="case-link" href="https://www.bernstein.io/blockchain-evidence-in-court" target="_blank">
+          Read full analysis → Bernstein.io
+        </a>
+      </div>
+
+      <hr class="divider" />
+
+      <h2 class="section-title">US Legislation & Federal Rules</h2>
+      <p class="section-intro">Several states have enacted explicit legislation recognizing blockchain records, and federal evidentiary rules already support blockchain authentication.</p>
+
+      <div class="legislation-grid">
+        <div class="leg-card">
+          <div class="leg-jurisdiction">FEDERAL · 2017</div>
+          <div class="leg-title">Federal Rules of Evidence 902(13) & 902(14)</div>
+          <p class="leg-desc">Amended to allow self-authentication of electronic records generated by an electronic process producing accurate results — directly applicable to blockchain sensor records.</p>
+        </div>
+        <div class="leg-card">
+          <div class="leg-jurisdiction">VERMONT · 2016</div>
+          <div class="leg-title">First US State Blockchain Legislation</div>
+          <p class="leg-desc">Vermont was the first US state to enact legislation recognizing blockchain records as self-authenticating when supported by a qualified person's written statement.</p>
+        </div>
+        <div class="leg-card">
+          <div class="leg-jurisdiction">ILLINOIS</div>
+          <div class="leg-title">Illinois Blockchain Technology Act</div>
+          <p class="leg-desc">Illinois — April Gate's home state — enacted the Blockchain Technology Act recognizing the legal validity of blockchain-based electronic records and signatures.</p>
+        </div>
+        <div class="leg-card">
+          <div class="leg-jurisdiction">ARIZONA & DELAWARE</div>
+          <div class="leg-title">Electronic Transaction Law Amendments</div>
+          <p class="leg-desc">Both states amended their electronic transaction laws to explicitly recognize records and signatures secured through blockchain technology as legally valid.</p>
+        </div>
+        <div class="leg-card">
+          <div class="leg-jurisdiction">CHINA · 2018</div>
+          <div class="leg-title">Supreme People's Court — Blockchain Evidence Rules</div>
+          <p class="leg-desc">China's Supreme People's Court explicitly recognized blockchain evidence as admissible in 2018 — the first major jurisdiction to do so by judicial decree.</p>
+        </div>
+        <div class="leg-card">
+          <div class="leg-jurisdiction">EUROPEAN UNION</div>
+          <div class="leg-title">eIDAS 2.0 Framework</div>
+          <p class="leg-desc">The EU's updated electronic identification framework is moving toward blockchain-signed document recognition, giving blockchain timestamps presumption of accuracy in member states.</p>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <h2 class="section-title">Academic & Industry Resources</h2>
+      <p class="section-intro">For legal teams conducting deeper research:</p>
+
+      <div class="case-card">
+        <div class="case-header">
+          <div class="case-name">Blockchain in the Courtroom — Frontiers in Blockchain</div>
+          <div class="case-year">2024</div>
+        </div>
+        <div class="case-court">Peer-reviewed academic paper · University of Southern California</div>
+        <div class="case-relevance">Comprehensive legal framework analysis</div>
+        <p class="case-summary">
+          A comprehensive peer-reviewed analysis of blockchain's evidentiary significance
+          and procedural implications in US judicial processes. Covers legislative analysis,
+          comparative case law, technical examination, and the hearsay exception framework
+          most applicable to machine-generated blockchain records.
+        </p>
+        <a class="case-link" href="https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2024.1306058/full" target="_blank">
+          Read full paper → Frontiers in Blockchain
+        </a>
+      </div>
+
+      <div class="case-card">
+        <div class="case-header">
+          <div class="case-name">When Blockchain Analytics Meet the Daubert Test</div>
+          <div class="case-year">2024</div>
+        </div>
+        <div class="case-court">Norton Rose Fulbright · Legal Analysis</div>
+        <div class="case-relevance">Practitioner guide to blockchain admissibility</div>
+        <p class="case-summary">
+          A practitioner-focused analysis from a major international law firm examining
+          how blockchain analytics evidence fares under the Daubert standard in US federal
+          courts. Reviews multiple 2023-2024 cases and provides guidance on how to
+          present and challenge blockchain-based expert testimony.
+        </p>
+        <a class="case-link" href="https://www.nortonrosefulbright.com/-/media/files/nrf/nrfweb/knowledge-pdfs/us_59864_reprint--when-blockchain-analytics-meet-the-daubert-test_r3.pdf" target="_blank">
+          Read analysis → Norton Rose Fulbright
+        </a>
+      </div>
+
+    </div>
+
+    <!-- FAQ -->
+    <hr class="divider" />
+
+    <h2 class="section-title">Common Questions</h2>
+    <div style="margin-bottom:3rem">
+
+      <div class="faq-item">
+        <div class="faq-q">Does April Gate's data qualify as a business record under the hearsay exception?</div>
+        <p class="faq-a">Machine-generated records produced automatically without human intervention — such as our sensor consensus proofs — are strong candidates for the business records exception or non-hearsay classification. Legal scholarship increasingly supports this view. The <a href="https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2024.1306058/full" target="_blank">2024 Frontiers in Blockchain paper</a> provides the most comprehensive academic treatment of this question.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Can opposing counsel argue the data was entered incorrectly in the first place?</div>
+        <p class="faq-a">This is the "garbage in, garbage out" challenge and it is the primary legitimate attack on blockchain evidence. April Gate specifically addresses it: hardware-signed readings from tamper-proof chips create a verifiable chain of custody from the physical sensor to the on-chain proof. Each reading is signed by a key that never leaves the chip hardware — it cannot be spoofed after the fact.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">What happens if April Gate goes out of business?</div>
+        <p class="faq-a">The blockchain record is permanent and independent of April Gate. Solana is a public ledger operated by thousands of independent validators worldwide. If April Gate ceased to exist tomorrow, every proof ever submitted would remain verifiable by anyone with access to the Solana network — which is public infrastructure, not a company's server.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Is this admissible in my state?</div>
+        <p class="faq-a">Vermont, Arizona, Illinois, and Delaware have enacted blockchain-specific legislation. Federal Rules of Evidence 902(13) and 902(14) provide a path to authentication in federal courts. Other jurisdictions are developing frameworks rapidly. We recommend engaging counsel familiar with your jurisdiction's current treatment of electronic records.</p>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">How do I explain this to a judge or jury?</div>
+        <p class="faq-a">The analogy that consistently lands: "Think of it as a tamper-evident wax seal — except instead of wax, it's mathematics, and instead of a single notary, it's a global public network that thousands of independent computers verified simultaneously. The seal is either intact or it isn't. If it's intact, the conditions were met."</p>
+      </div>
+
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-block">
+      <div>
+        <h2>Ready to eliminate cold chain disputes?</h2>
+        <p>We're speaking with pharmaceutical cargo insurers and logistics companies about pilot partnerships. A 20-minute conversation is all it takes to see if April Gate fits your needs.</p>
+      </div>
+      <a href="mailto:irina@aprilgatehq.com" class="cta-btn">Get in touch →</a>
+    </div>
+
+  </div>
+
+  <footer>
+    © 2026 APRIL GATE · <a href="index.html">aprilgatehq.com</a> · irina@aprilgatehq.com · <a href="whitepaper.pdf" target="_blank" style="color:var(--accent);">Whitepaper</a>
+    <br style="margin-bottom:0.4rem"/>
+    This page is for informational purposes only and does not constitute legal advice.
+    Consult qualified legal counsel for advice specific to your jurisdiction.
+  </footer>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+
+
+  <!-- SITE NAV STRIP -->
+  <div style="background:#0d1117;border-top:1px solid #1e2d3d;padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;">
+    <span style="color:#00d4a8;">APRIL // GATE</span>
+    <div style="display:flex;gap:1.5rem;">
+      <a href="index.html" style="color:#556677;text-decoration:none;">HOME</a>
+      <a href="verify.html" style="color:#556677;text-decoration:none;">VERIFY SHIPMENT</a>
+      <a href="dashboard.html" style="color:#556677;text-decoration:none;">DASHBOARD</a>
+      <a href="mailto:irina@aprilgatehq.com" style="color:#556677;text-decoration:none;">CONTACT</a>
+    </div>
+    <span style="color:#556677;">© 2026 APRIL GATE · PATENT PENDING</span>
+  </div>
+</body>
+</html>

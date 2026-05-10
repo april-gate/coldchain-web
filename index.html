@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — Tamper-Evident Cold Chain Verification</title>
+  <meta name="description" content="Cryptographically verified cold chain integrity for pharmaceutical cargo. Powered by Solana." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:         #080c10;
+      --bg2:        #0d1117;
+      --surface:    #111820;
+      --border:     #1e2d3d;
+      --accent:     #00d4a8;
+      --accent2:    #0088ff;
+      --accent-dim: rgba(0, 212, 168, 0.08);
+      --text:       #c8d8e8;
+      --text-dim:   #556677;
+      --text-bright:#e8f4ff;
+      --mono:       'Share Tech Mono', monospace;
+      --display:    'Bebas Neue', sans-serif;
+      --body:       'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,168,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,168,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 1.2rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8,12,16,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .nav-logo span {
+      color: var(--text-dim);
+      margin: 0 0.5rem;
+    }
+
+    .nav-tag {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.8rem;
+      border-radius: 2px;
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-tag:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8rem 0 6rem;
+      position: relative;
+    }
+
+    /* Animated circuit lines */
+    .circuit-lines {
+      position: absolute;
+      top: 0; right: 0;
+      width: 55%;
+      height: 100%;
+      opacity: 0.12;
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 2rem;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero-title {
+      font-family: var(--display);
+      font-size: clamp(4rem, 10vw, 8.5rem);
+      line-height: 0.92;
+      color: var(--text-bright);
+      letter-spacing: 0.02em;
+      margin-bottom: 0.5rem;
+      animation: fadeUp 0.8s 0.1s ease both;
+    }
+
+    .hero-title .accent-word {
+      color: var(--accent);
+      display: block;
+    }
+
+    .hero-subtitle {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.8s 0.2s ease both;
+    }
+
+    .hero-description {
+      font-size: 1.15rem;
+      color: var(--text);
+      max-width: 560px;
+      line-height: 1.8;
+      margin-bottom: 3rem;
+      animation: fadeUp 0.8s 0.3s ease both;
+    }
+
+    .hero-description strong {
+      color: var(--text-bright);
+      font-weight: 500;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      animation: fadeUp 0.8s 0.4s ease both;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent);
+      color: #080c10;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.9rem 2rem;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+    }
+
+    .btn-primary:hover {
+      background: #00f0c0;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.9rem 2rem;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── STAT STRIP ── */
+    .stat-strip {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 2rem 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin: 2rem 0 6rem;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.8s 0.5s ease both;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 1rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat-item:last-child { border-right: none; }
+
+    .stat-number {
+      font-family: var(--display);
+      font-size: 3rem;
+      color: var(--accent);
+      line-height: 1;
+      display: block;
+    }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
+    }
+
+    /* ── SECTION ── */
+    section {
+      padding: 6rem 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-tag {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .section-tag::before {
+      content: '';
+      display: block;
+      width: 1.5rem;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      color: var(--text-bright);
+      line-height: 1;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── PROBLEM ── */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      margin-top: 3rem;
+    }
+
+    .problem-text p {
+      font-size: 1.05rem;
+      color: var(--text);
+      line-height: 1.9;
+      margin-bottom: 1.5rem;
+    }
+
+    .problem-text strong { color: var(--text-bright); font-weight: 500; }
+
+    .problem-visual {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .problem-visual::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+
+    .log-entry {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .log-entry:last-child { border-bottom: none; }
+
+    .log-time { color: var(--text-dim); }
+    .log-value { color: var(--text-bright); }
+
+    .log-status {
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    .status-ok {
+      background: rgba(0,212,168,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(0,212,168,0.2);
+    }
+
+    .status-tampered {
+      background: rgba(255,60,60,0.1);
+      color: #ff6060;
+      border: 1px solid rgba(255,60,60,0.2);
+      animation: pulse-red 2s infinite;
+    }
+
+    .status-gap {
+      background: rgba(255,160,0,0.1);
+      color: #ffa000;
+      border: 1px solid rgba(255,160,0,0.2);
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-bg {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 3rem;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 2.5rem;
+      left: 2.5rem;
+      right: 2.5rem;
+      height: 1px;
+      background: linear-gradient(90deg,
+        var(--accent) 0%,
+        var(--accent2) 50%,
+        var(--accent) 100%);
+      opacity: 0.3;
+    }
+
+    .step {
+      padding: 2rem 1.5rem;
+      position: relative;
+      border-right: 1px solid var(--border);
+    }
+
+    .step:last-child { border-right: none; }
+
+    .step-number {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .step-icon {
+      width: 3rem;
+      height: 3rem;
+      border: 1px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      background: var(--accent-dim);
+      position: relative;
+    }
+
+    .step-icon svg {
+      width: 1.4rem;
+      height: 1.4rem;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.5;
+    }
+
+    .step-title {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--text-bright);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    .step-desc {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* ── WHY SOLANA ── */
+    .solana-strip {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      margin-top: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .solana-strip::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+    }
+
+    .solana-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .solana-stats {
+      display: flex;
+      gap: 3rem;
+      flex: 1;
+    }
+
+    .solana-stat .value {
+      font-family: var(--display);
+      font-size: 2rem;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .solana-stat .label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+    }
+
+    /* ── TEAM ── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .team-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .team-card:hover { border-color: var(--accent); }
+
+    .team-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 4rem; height: 4rem;
+      background: var(--accent-dim);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+
+    .team-role {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .team-name {
+      font-family: var(--display);
+      font-size: 1.8rem;
+      color: var(--text-bright);
+      line-height: 1;
+      margin-bottom: 1rem;
+      letter-spacing: 0.03em;
+    }
+
+    .team-bio {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    .team-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .team-tag {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.6rem;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── CONTACT ── */
+    .contact-section {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+    }
+
+    .contact-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .contact-left .section-title {
+      margin-bottom: 1rem;
+    }
+
+    .contact-left p {
+      font-size: 1rem;
+      color: var(--text-dim);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+    }
+
+    .contact-right {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2.5rem;
+      position: relative;
+    }
+
+    .contact-right::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    .contact-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .contact-item:last-child { border-bottom: none; }
+
+    .contact-item-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .contact-item-value {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--accent);
+    }
+
+    .contact-item-value a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .contact-item-value a:hover {
+      color: #00f0c0;
+    }
+
+    /* ── COLOSSEUM BADGE ── */
+    .colosseum-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(0,136,255,0.08);
+      border: 1px solid rgba(0,136,255,0.25);
+      padding: 0.75rem 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .colosseum-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse-blue 2s infinite;
+    }
+
+    @keyframes pulse-blue {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,136,255,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,136,255,0); }
+    }
+
+    .colosseum-badge-text {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--accent2);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+    }
+
+    .footer-copy {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    .footer-solana {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .solana-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .problem-grid,
+      .contact-inner,
+      .team-grid { grid-template-columns: 1fr; }
+
+      .steps { grid-template-columns: 1fr 1fr; }
+
+      .stat-strip { grid-template-columns: 1fr; }
+
+      .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+
+      .solana-strip { flex-direction: column; gap: 1.5rem; }
+
+      .solana-stats { gap: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">APRIL<span>//</span>GATE</div>
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+      <a href="how-it-works.html" class="nav-tag">LEGAL &amp; COMPLIANCE</a>
+      <a href="verify.html" class="nav-tag">VERIFY</a>
+      <a href="dashboard.html" class="nav-tag">DASHBOARD</a>
+      <a href="whitepaper.pdf" target="_blank" class="nav-tag" style="color:var(--accent);border-color:var(--accent);">WHITEPAPER</a>
+      <div class="nav-tag">IN DEVELOPMENT · 2026</div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="container">
+    <div class="hero">
+
+      <!-- SVG circuit decoration -->
+      <svg class="circuit-lines" viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMid slice">
+        <g stroke="#00d4a8" stroke-width="1" fill="none">
+          <path d="M600,100 L400,100 L400,200 L200,200"/>
+          <circle cx="400" cy="100" r="4" fill="#00d4a8"/>
+          <circle cx="200" cy="200" r="4" fill="#00d4a8"/>
+          <path d="M600,250 L350,250 L350,350 L150,350 L150,450"/>
+          <circle cx="350" cy="250" r="3" fill="#00d4a8" opacity="0.6"/>
+          <circle cx="350" cy="350" r="3" fill="#00d4a8" opacity="0.6"/>
+          <circle cx="150" cy="450" r="4" fill="#00d4a8"/>
+          <path d="M600,400 L450,400 L450,500 L300,500 L300,600 L100,600"/>
+          <circle cx="450" cy="400" r="3" fill="#0088ff" opacity="0.7"/>
+          <circle cx="300" cy="500" r="3" fill="#0088ff" opacity="0.7"/>
+          <circle cx="100" cy="600" r="4" fill="#0088ff"/>
+          <path d="M600,550 L500,550 L500,650 L250,650"/>
+          <circle cx="500" cy="550" r="3" fill="#00d4a8" opacity="0.5"/>
+          <path d="M600,700 L420,700 L420,750 L200,750 L200,800"/>
+          <circle cx="420" cy="700" r="3" fill="#00d4a8" opacity="0.4"/>
+          <!-- Small squares at nodes -->
+          <rect x="196" y="196" width="8" height="8" fill="none" stroke="#00d4a8"/>
+          <rect x="146" y="446" width="8" height="8" fill="none" stroke="#00d4a8"/>
+          <rect x="96" y="596" width="8" height="8" fill="none" stroke="#0088ff"/>
+        </g>
+      </svg>
+
+      <div class="hero-eyebrow">Tamper-Evident Cold Chain Verification</div>
+
+      <h1 class="hero-title">
+        APRIL
+        <span class="accent-word">GATE</span>
+      </h1>
+
+      <div class="hero-subtitle">// POWERED BY SOLANA · ZERO-KNOWLEDGE PROOFS · HARDWARE CRYPTOGRAPHY</div>
+
+      <p class="hero-description">
+        Pharmaceutical cargo worth <strong>billions</strong> spoils or gets disputed every year —
+        because cold chain records can be altered, backdated, and challenged.
+        April Gate makes tampering <strong>cryptographically impossible</strong>.
+        Not just hard. Impossible.
+      </p>
+
+      <div class="hero-cta">
+        <a href="dashboard.html" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> LAUNCH DASHBOARD</a> <a href="mailto:irina@aprilgatehq.com" class="btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+          GET IN TOUCH
+        </a>
+        <a href="verify.html" class="btn-secondary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> VERIFY SHIPMENT</a> <a href="how-it-works.html" class="btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,8 12,12 14,14"/></svg>
+          HOW IT WORKS
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STAT STRIP -->
+  <div class="container">
+    <div class="stat-strip">
+      <div class="stat-item">
+        <span class="stat-number">$35B</span>
+        <div class="stat-label">Annual pharma cold chain losses</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">20%</span>
+        <div class="stat-label">Temperature-sensitive drugs damaged in transit</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">1</span>
+        <div class="stat-label">Cryptographic proof replaces thousands of mutable logs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM -->
+  <section>
+    <div class="container">
+      <div class="section-tag">The Problem</div>
+      <h2 class="section-title">RECORDS THAT CAN BE CHANGED<br>ARE RECORDS THAT CAN'T BE TRUSTED</h2>
+
+      <div class="problem-grid">
+        <div class="problem-text">
+          <p>
+            When a pharmaceutical cold chain dispute arises today, there is
+            <strong>no immutable record</strong>. Centralized logs live on servers
+            controlled by one party. Sensor data can be backdated. Liability
+            arguments drag on for months — and someone always loses money they
+            shouldn't have.
+          </p>
+          <p>
+            Insurers pay disputed claims they can't disprove. Distributors absorb
+            losses for excursions they didn't cause. Pharma companies discard product
+            they can't prove was compromised. The entire system runs on <strong>trust
+            that has no mathematical foundation</strong>.
+          </p>
+          <p>
+            April Gate changes the trust model at the root. Not just better logging.
+            <strong>Cryptographically provable truth.</strong>
+          </p>
+        </div>
+
+        <div class="problem-visual">
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.15em;margin-bottom:1rem;">
+            // TRADITIONAL LOG — MUTABLE
+          </div>
+          <div class="log-entry">
+            <span class="log-time">2026-04-15 08:14</span>
+            <span class="log-value">4.2°C</span>
+            <span class="log-status status-ok">OK</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">2026-04-15 09:22</span>
+            <span class="log-value">4.8°C</span>
+            <span class="log-status status-ok">OK</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">2026-04-15 11:05</span>
+            <span class="log-value">??°C</span>
+            <span class="log-status status-gap">GAP</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">2026-04-15 14:33</span>
+            <span class="log-value">12.7°C</span>
+            <span class="log-status status-tampered">TAMPERED?</span>
+          </div>
+          <div class="log-entry">
+            <span class="log-time">2026-04-15 15:01</span>
+            <span class="log-value">4.1°C</span>
+            <span class="log-status status-ok">OK</span>
+          </div>
+          <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.65rem;color:#ff6060;">
+            ⚠ Who altered the 11:05 record? Nobody knows. Lawyers argue for months.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-bg" id="how">
+    <div class="container">
+      <div class="section-tag">The Solution</div>
+      <h2 class="section-title">HOW APRIL GATE WORKS</h2>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-number">// 01</span>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div class="step-title">HARDWARE SIGNING</div>
+          <p class="step-desc">Each sensor is backed by a secure element chip. Every reading is signed with a private key that never leaves the hardware — making forgery physically impossible.</p>
+        </div>
+
+        <div class="step">
+          <span class="step-number">// 02</span>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M12 8v3M9.5 17l-2.5-3M14.5 17l2.5-3"/></svg>
+          </div>
+          <div class="step-title">MESH CONSENSUS</div>
+          <p class="step-desc">Multiple sensors form a local network and reach cryptographic consensus on readings — even with no internet connection. A single rogue sensor cannot corrupt the record.</p>
+        </div>
+
+        <div class="step">
+          <span class="step-number">// 03</span>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="step-title">ZERO-KNOWLEDGE PROOF</div>
+          <p class="step-desc">Instead of uploading thousands of raw readings, sensors generate a single mathematical proof that consensus was valid — without revealing proprietary operational details.</p>
+        </div>
+
+        <div class="step">
+          <span class="step-number">// 04</span>
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="step-title">ON-CHAIN TRUTH</div>
+          <p class="step-desc">The proof is submitted to Solana on reconnection. Nobody — not us, not the shipper, not anyone — can alter it afterward. One immutable record. Verifiable by all parties instantly.</p>
+        </div>
+      </div>
+
+      <!-- Solana strip -->
+      <div class="solana-strip">
+        <div class="solana-label">WHY SOLANA</div>
+        <div class="solana-stats">
+          <div class="solana-stat">
+            <div class="value">65K</div>
+            <div class="label">Transactions/sec</div>
+          </div>
+          <div class="solana-stat">
+            <div class="value">$0.00025</div>
+            <div class="label">Cost per proof submission</div>
+          </div>
+          <div class="solana-stat">
+            <div class="value">&lt;1s</div>
+            <div class="label">Finality</div>
+          </div>
+          <div class="solana-stat">
+            <div class="value">400ms</div>
+            <div class="label">Block time</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section>
+    <div class="container">
+      <div class="section-tag">The Team</div>
+      <h2 class="section-title">BUILT BY PEOPLE WHO<br>UNDERSTAND THE PROBLEM</h2>
+
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="team-role">Founder &amp; Engineer</div>
+          <div class="team-name">IRINA GUBERMAN</div>
+          <p class="team-bio">
+            Distributed systems engineer with 25+ years building high-throughput infrastructure across blockchain, IoT, fintech, and networking. Production experience on Solana at Neon Labs. Inventor of the ZK consensus architecture underlying April Gate, and author of the Ephemeral Quorum Subnet theory. April Gate is an active Colosseum · Solana Frontier Hackathon submission.
+          </p>
+          <div class="team-tags">
+            <span class="team-tag">SOLANA</span>
+            <span class="team-tag">RUST</span>
+            <span class="team-tag">ZK PROOFS</span>
+            <span class="team-tag">IOT NETWORKS</span>
+            <span class="team-tag">PATENT HOLDER</span>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-role">Chief Science Officer</div>
+          <div class="team-name">BORIS GUBERMAN</div>
+          <p class="team-bio">
+            PhD-level thermodynamicist with deep expertise in industrial chemical plant design, sensor placement methodology, and heat transfer physics across large-scale environments. Brings rigorous scientific foundation to cold chain integrity — including measurement validation in adversarial and resource-constrained conditions. Patent holder in thermodynamic systems.
+          </p>
+          <div class="team-tags">
+            <span class="team-tag">THERMODYNAMICS</span>
+            <span class="team-tag">SENSOR PLACEMENT</span>
+            <span class="team-tag">INDUSTRIAL CHEMISTRY</span>
+            <span class="team-tag">PATENT HOLDER</span>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-role">Industry Partnerships Advisor</div>
+          <div class="team-name">NINA STEIN</div>
+          <p class="team-bio">
+            Broad pharma industry experience across multiple companies spanning compliance, operations, and business development. A fast learner who has successfully navigated complex technical and regulatory landscapes — most recently leading datacenter compliance initiatives from scratch alongside engineering teams. Brings the operator's perspective on cold chain pain points and the business relationships to find the right partners, insurers, and institutional players.
+          </p>
+          <div class="team-tags">
+            <span class="team-tag">PHARMA INDUSTRY</span>
+            <span class="team-tag">COMPLIANCE</span>
+            <span class="team-tag">BUSINESS DEVELOPMENT</span>
+            <span class="team-tag">PARTNERSHIPS</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact-section">
+    <div class="container">
+      <div class="contact-inner">
+        <div class="contact-left">
+          <div class="section-tag">Contact</div>
+          <h2 class="section-title">LET'S TALK ABOUT YOUR COLD CHAIN RISK</h2>
+          <p>
+            We're actively speaking with pharmaceutical cargo insurers and logistics operators
+            to validate our approach. If cold chain claims disputes are a real cost in your
+            business — we'd value 20 minutes of your time.
+          </p>
+          <div class="colosseum-badge">
+            <div class="colosseum-badge-dot"></div>
+            <span class="colosseum-badge-text">PRESENTING AT COLOSSEUM · SOLANA FRONTIER HACKATHON · MAY 2026</span>
+          </div>
+        </div>
+
+        <div class="contact-right">
+          <div class="contact-item">
+            <span class="contact-item-label">// EMAIL</span>
+            <span class="contact-item-value">
+              <a href="mailto:irina@aprilgatehq.com">irina@aprilgatehq.com</a>
+            </span>
+          </div>
+          <div class="contact-item">
+            <span class="contact-item-label">// COMPANY</span>
+            <span class="contact-item-value">April Gate</span>
+          </div>
+          <div class="contact-item">
+            <span class="contact-item-label">// LOCATION</span>
+            <span class="contact-item-value">Chicago, IL · Denver, CO</span>
+          </div>
+          <div class="contact-item">
+            <span class="contact-item-label">// STATUS</span>
+            <span class="contact-item-value">In Development · Seeking Pilot Partners</span>
+          </div>
+          <div class="contact-item">
+            <span class="contact-item-label">// BLOCKCHAIN</span>
+            <span class="contact-item-value">Solana Mainnet (Devnet Active)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-logo">APRIL // GATE</div>
+        <div style="display:flex;gap:1.5rem;align-items:center;">
+          <a href="verify.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">VERIFY</a>
+          <a href="dashboard.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">DASHBOARD</a>
+          <a href="how-it-works.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">LEGAL &amp; COMPLIANCE</a>
+          <a href="whitepaper.pdf" target="_blank" style="font-family:var(--mono);font-size:0.65rem;color:var(--accent);letter-spacing:0.1em;text-decoration:none;">WHITEPAPER</a>
+          <a href="mailto:irina@aprilgatehq.com" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">CONTACT</a>
+        </div>
+        <div class="footer-solana">
+          <div class="solana-dot"></div>
+          BUILT ON SOLANA
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

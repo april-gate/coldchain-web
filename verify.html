@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — Shipment Verification</title>
+  <meta name="description" content="Verify pharmaceutical cold chain integrity. Cryptographically immutable proof — no technical knowledge required." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Share+Tech+Mono&family=Literata:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #f8f6f1;
+      --bg2:      #f0ede6;
+      --surface:  #ffffff;
+      --border:   #d8d2c8;
+      --border2:  #c8c0b4;
+      --ink:      #1a1814;
+      --ink2:     #4a4540;
+      --ink3:     #7a7268;
+      --accent:   #0a4f3c;
+      --accent2:  #1a7a5e;
+      --accent3:  #e8f4f0;
+      --warn:     #7a3000;
+      --warn-bg:  #fdf0e8;
+      --danger:   #6a0000;
+      --danger-bg:#fdf0f0;
+      --gold:     #8a6a20;
+      --display:  'Playfair Display', Georgia, serif;
+      --body:     'Literata', Georgia, serif;
+      --mono:     'Share Tech Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--body);
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* Subtle paper texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border: 1.5px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-mark svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.5;
+    }
+
+    .logo-text {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .nav-link {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--ink3);
+      text-decoration: none;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover { color: var(--accent); }
+    .nav-link.active { color: var(--accent); border-bottom: 1px solid var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 5rem 2rem 3rem;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent2);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: '';
+      display: block;
+      width: 3rem;
+      height: 1px;
+      background: var(--border2);
+    }
+
+    .hero-title {
+      font-family: var(--display);
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-subtitle {
+      font-size: 1.15rem;
+      color: var(--ink2);
+      max-width: 580px;
+      margin: 0 auto 3rem;
+      line-height: 1.8;
+    }
+
+    /* ── VERIFY BOX ── */
+    .verify-box {
+      max-width: 680px;
+      margin: 0 auto 5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2.5rem;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+
+    .verify-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent);
+    }
+
+    .verify-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--ink3);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .verify-input-row {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+    }
+
+    .verify-input {
+      flex: 1;
+      border: 1px solid var(--border2);
+      border-right: none;
+      padding: 0.85rem 1.25rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--ink);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .verify-input:focus { border-color: var(--accent); }
+    .verify-input::placeholder { color: var(--ink3); }
+
+    .verify-btn {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      padding: 0.85rem 1.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .verify-btn:hover { background: var(--accent2); }
+    .verify-btn:disabled { background: var(--border2); border-color: var(--border2); cursor: not-allowed; }
+
+    .verify-hint {
+      font-size: 0.82rem;
+      color: var(--ink3);
+      font-style: italic;
+    }
+
+    /* Result states */
+    .verify-result {
+      display: none;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .verify-result.show { display: block; }
+
+    .result-status {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .result-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .result-icon.valid   { background: var(--accent3); color: var(--accent); border: 1.5px solid var(--accent2); }
+    .result-icon.invalid { background: var(--danger-bg); color: var(--danger); border: 1.5px solid var(--danger); }
+    .result-icon.warn    { background: var(--warn-bg); color: var(--warn); border: 1.5px solid var(--warn); }
+
+    .result-headline {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .result-headline.valid   { color: var(--accent); }
+    .result-headline.invalid { color: var(--danger); }
+    .result-headline.warn    { color: var(--warn); }
+
+    .result-subline {
+      font-size: 0.88rem;
+      color: var(--ink3);
+      margin-top: 0.2rem;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+    }
+
+    .result-cell {
+      background: var(--bg);
+      padding: 0.9rem 1.1rem;
+    }
+
+    .result-cell-label {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--ink3);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+
+    .result-cell-value {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--ink);
+      font-weight: 400;
+    }
+
+    .result-cell-value.good { color: var(--accent); }
+    .result-cell-value.bad  { color: var(--danger); }
+
+    .chain-proof-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .chain-proof-label {
+      font-family: var(--mono);
+      font-size: 0.58rem;
+      color: var(--ink3);
+      letter-spacing: 0.15em;
+      white-space: nowrap;
+    }
+
+    .chain-proof-hash {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: #0052cc;
+      flex: 1;
+      word-break: break-all;
+    }
+
+    .chain-proof-link {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid var(--accent);
+      padding: 0.25rem 0.6rem;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .chain-proof-link:hover { background: var(--accent3); }
+
+    .plain-english-box {
+      background: var(--accent3);
+      border-left: 3px solid var(--accent);
+      padding: 1rem 1.25rem;
+      font-size: 0.92rem;
+      color: var(--ink2);
+      line-height: 1.7;
+    }
+
+    .plain-english-box strong { color: var(--accent); font-weight: 500; }
+
+    /* ── HOW IT WORKS ── */
+    .section {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .section-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--ink3);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-intro {
+      font-size: 1.05rem;
+      color: var(--ink2);
+      max-width: 620px;
+      line-height: 1.8;
+      margin-bottom: 3rem;
+    }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 1px solid var(--border);
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .step:last-child { border-bottom: none; }
+    .step:hover { background: var(--bg2); }
+
+    .step-number {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1.75rem 0 1.75rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .step-num-inner {
+      font-family: var(--display);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--border2);
+      line-height: 1;
+    }
+
+    .step-content {
+      padding: 1.75rem 2rem;
+    }
+
+    .step-title {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .step-desc {
+      font-size: 0.95rem;
+      color: var(--ink2);
+      line-height: 1.75;
+      margin-bottom: 0.75rem;
+    }
+
+    .step-plain {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--accent2);
+      letter-spacing: 0.05em;
+      background: var(--accent3);
+      padding: 0.5rem 0.75rem;
+      border-left: 2px solid var(--accent);
+      display: inline-block;
+    }
+
+    /* FAQ */
+    .faq { margin-top: 3rem; }
+
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 0;
+    }
+
+    .faq-item:first-child { border-top: 1px solid var(--border); }
+
+    .faq-question {
+      font-family: var(--display);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .faq-question::after {
+      content: '+';
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--ink3);
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    .faq-item.open .faq-question::after {
+      transform: rotate(45deg);
+    }
+
+    .faq-answer {
+      font-size: 0.95rem;
+      color: var(--ink2);
+      line-height: 1.8;
+      display: none;
+      max-width: 640px;
+    }
+
+    .faq-item.open .faq-answer { display: block; }
+
+    /* Analogy section */
+    .analogy-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .analogy-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .analogy-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 60px; height: 60px;
+      background: var(--bg2);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+
+    .analogy-label {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--ink3);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .analogy-title {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.75rem;
+    }
+
+    .analogy-desc {
+      font-size: 0.9rem;
+      color: var(--ink2);
+      line-height: 1.7;
+    }
+
+    /* Contact strip */
+    .contact-strip {
+      background: var(--accent);
+      color: #fff;
+      padding: 3rem 2rem;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .contact-strip-title {
+      font-family: var(--display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .contact-strip-sub {
+      font-size: 1rem;
+      opacity: 0.85;
+      margin-bottom: 1.75rem;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .contact-strip-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #fff;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      padding: 0.85rem 2rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .contact-strip-btn:hover { background: var(--accent3); }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-logo {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--ink3);
+      letter-spacing: 0.15em;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .footer-link {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--ink3);
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      transition: color 0.2s;
+    }
+
+    .footer-link:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--ink3);
+      letter-spacing: 0.08em;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) {
+      .analogy-grid { grid-template-columns: 1fr; }
+      .result-grid  { grid-template-columns: 1fr; }
+      .step         { grid-template-columns: 60px 1fr; }
+      .header-nav   { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="index.html" class="header-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </div>
+      <div class="logo-text">April Gate</div>
+    </a>
+    <nav class="header-nav">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="verify.html" class="nav-link active">Verify</a>
+      <a href="how-it-works.html" class="nav-link">Legal &amp; Compliance</a>
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="whitepaper.pdf" target="_blank" class="nav-link" style="color:var(--accent);">Whitepaper</a>
+      <a href="mailto:irina@aprilgatehq.com" class="nav-link">Contact</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">Shipment Verification</div>
+    <h1 class="hero-title">
+      Was this shipment<br><em>kept safe?</em>
+    </h1>
+    <p class="hero-subtitle">
+      Enter a shipment ID or transaction reference below. April Gate returns a simple, legally defensible answer — verified by mathematics, recorded permanently on blockchain.
+    </p>
+  </div>
+
+  <!-- VERIFY BOX -->
+  <div class="verify-box" style="position:relative;z-index:1;">
+    <div class="verify-label">// Enter Shipment ID or Blockchain Transaction Hash</div>
+    <div class="verify-input-row">
+      <input
+        class="verify-input"
+        id="verifyInput"
+        type="text"
+        placeholder="e.g.  SHP-2026-0421  or  5KqPmN8x..."
+        onkeydown="if(event.key==='Enter') verify()"
+      />
+      <button class="verify-btn" id="verifyBtn" onclick="verify()">VERIFY</button>
+    </div>
+    <div class="verify-hint">
+      No account required. Results are public and independently verifiable on the Solana blockchain.
+    </div>
+
+    <!-- RESULT -->
+    <div class="verify-result" id="verifyResult">
+
+      <div class="result-status">
+        <div class="result-icon" id="resultIcon">✓</div>
+        <div>
+          <div class="result-headline" id="resultHeadline">Shipment Conditions Verified</div>
+          <div class="result-subline" id="resultSubline">All sensors in agreement · No tampering detected</div>
+        </div>
+      </div>
+
+      <div class="result-grid" id="resultGrid">
+        <div class="result-cell">
+          <div class="result-cell-label">// Shipment ID</div>
+          <div class="result-cell-value" id="rShipmentId">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-cell-label">// Verification Result</div>
+          <div class="result-cell-value good" id="rResult">VALID</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-cell-label">// Temperature Range</div>
+          <div class="result-cell-value" id="rTemp">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-cell-label">// Specification</div>
+          <div class="result-cell-value" id="rSpec">2°C – 8°C</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-cell-label">// Sensors Agreed</div>
+          <div class="result-cell-value good" id="rSensors">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-cell-label">// Tamper Events</div>
+          <div class="result-cell-value" id="rTamper">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-cell-label">// Proof Verified</div>
+          <div class="result-cell-value good" id="rProof">—</div>
+        </div>
+        <div class="result-cell">
+          <div class="result-cell-label">// Verified At</div>
+          <div class="result-cell-value" id="rTime">—</div>
+        </div>
+      </div>
+
+      <div class="chain-proof-row">
+        <div class="chain-proof-label">// BLOCKCHAIN RECORD</div>
+        <div class="chain-proof-hash" id="rTxHash">—</div>
+        <a class="chain-proof-link" id="rTxLink" href="#" target="_blank">VIEW ON SOLANA →</a>
+      </div>
+
+      <div class="plain-english-box" id="plainEnglishBox">
+        <strong>In plain English:</strong>
+        The sensors aboard this shipment independently measured and agreed on temperature conditions throughout transit.
+        A mathematical certificate of that agreement was recorded permanently on the Solana blockchain.
+        This certificate cannot be altered, backdated, or disputed — it is as permanent as any record can be.
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <hr class="section-divider" />
+  <div class="section">
+    <div class="section-eyebrow">// How it works</div>
+    <h2 class="section-title">A simple answer backed by<br>mathematical certainty</h2>
+    <p class="section-intro">
+      April Gate is designed so that insurers, lawyers, compliance officers, and judges can trust the result — without understanding the underlying technology. Here is what happens, in plain terms.
+    </p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-number"><div class="step-num-inner">1</div></div>
+        <div class="step-content">
+          <div class="step-title">Each sensor carries a unique, unforgeable identity</div>
+          <p class="step-desc">
+            Every April Gate sensor contains a tamper-resistant chip — similar to the chip inside a credit card or a passport — that holds a private cryptographic key. That key is burned into the hardware at manufacture and cannot be extracted, copied, or transferred. Every temperature reading the sensor produces is signed by that key.
+          </p>
+          <div class="step-plain">In court terms: the sensor cannot lie about its identity, the same way a passport chip cannot be cloned.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number"><div class="step-num-inner">2</div></div>
+        <div class="step-content">
+          <div class="step-title">Multiple independent sensors must agree</div>
+          <p class="step-desc">
+            A shipment carries several sensors placed independently throughout the container. They continuously cross-check each other's readings. If one sensor is tampered with, removed, or replaced — the others detect the disagreement. A single compromised sensor cannot corrupt the record.
+          </p>
+          <div class="step-plain">In court terms: independent witnesses who cannot coordinate a false story.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number"><div class="step-num-inner">3</div></div>
+        <div class="step-content">
+          <div class="step-title">A mathematical certificate is generated — not a log</div>
+          <p class="step-desc">
+            April Gate does not store thousands of individual temperature readings in a database that someone could alter. Instead, the sensors generate a single mathematical certificate — a zero-knowledge proof — that attests to what happened during the journey. This certificate proves the conditions were met without revealing any confidential operational details.
+          </p>
+          <div class="step-plain">In court terms: a certified summary that cannot be fabricated after the fact.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number"><div class="step-num-inner">4</div></div>
+        <div class="step-content">
+          <div class="step-title">The certificate is recorded permanently on blockchain</div>
+          <p class="step-desc">
+            The mathematical certificate is written to the Solana blockchain — a global, distributed ledger that no single person, company, or government controls. Once written, it cannot be altered, deleted, or backdated. April Gate itself cannot change it. The shipment company cannot change it. It is as permanent as any record can be.
+          </p>
+          <div class="step-plain">In court terms: a notarized document held simultaneously by thousands of independent parties worldwide.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-number"><div class="step-num-inner">5</div></div>
+        <div class="step-content">
+          <div class="step-title">Anyone can verify the result — instantly, for free</div>
+          <p class="step-desc">
+            Enter the shipment ID above. April Gate checks the blockchain record and returns a simple answer: valid or not valid. No account required. No fee. No interpretation needed. The same result is returned to the insurer, the pharma company, the regulator, and the judge — because it comes from the same immutable source.
+          </p>
+          <div class="step-plain">In court terms: public record that all parties can independently confirm.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALOGIES -->
+  <hr class="section-divider" />
+  <div class="section">
+    <div class="section-eyebrow">// Common questions</div>
+    <h2 class="section-title">For those who prefer analogies</h2>
+
+    <div class="analogy-grid">
+      <div class="analogy-card">
+        <div class="analogy-label">// For insurers</div>
+        <div class="analogy-title">Like Progressive Snapshot — but for cargo</div>
+        <p class="analogy-desc">
+          Progressive gives drivers a device that records driving behavior and rewards safe drivers with lower premiums. April Gate does the same for pharmaceutical shipments — sensors record conditions throughout transit, and that verified record is the basis for your coverage decision. No dispute. No ambiguity.
+        </p>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-label">// For lawyers</div>
+        <div class="analogy-title">Like a wax seal — that mathematics guarantees</div>
+        <p class="analogy-desc">
+          A wax seal on a letter proves it was not opened in transit — you do not need to understand chemistry to trust the seal. April Gate's mathematical certificate proves conditions were maintained — you do not need to understand cryptography to present it as evidence. The seal is either intact or it is not.
+        </p>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-label">// For compliance officers</div>
+        <div class="analogy-title">Like a 21 CFR Part 11 audit trail — that no one controls</div>
+        <p class="analogy-desc">
+          FDA requires electronic records to be accurate, reliable, and protected from alteration. Traditional systems satisfy this with access controls and audit logs — which a court can still challenge. April Gate's record is protected by mathematics and distributed globally. There is no administrator who could alter it even if compelled to.
+        </p>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-label">// For judges and juries</div>
+        <div class="analogy-title">Like DNA evidence — the science speaks for itself</div>
+        <p class="analogy-desc">
+          Juries do not need to understand genetics to accept DNA evidence. They accept the expert's testimony that the method is sound. April Gate's mathematical certificates follow the same path — an expert witness explains that the proof is valid, and the result stands on its own merits. The technology is peer-reviewed and independently verifiable.
+        </p>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq">
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">Can April Gate alter the records after the fact?</div>
+        <div class="faq-answer">No. Once a proof is written to the Solana blockchain, it is outside April Gate's control entirely. The blockchain is maintained by thousands of independent computers worldwide. No single party — including April Gate — can alter, delete, or add to an existing record. This is the fundamental property that makes the system trustworthy.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">What if a sensor fails or connectivity is lost during transit?</div>
+        <div class="faq-answer">Connectivity gaps are expected during ocean freight and are recorded as expected gaps — distinguishable from suspicious gaps caused by deliberate interference. Sensors buffer readings locally and submit them when connectivity returns. A tamper attempt that disconnects a sensor looks very different from an ocean transit dead zone, and both are recorded immutably on-chain.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">Is this admissible as evidence in court?</div>
+        <div class="faq-answer">Blockchain evidence is already accepted in multiple jurisdictions including the United States, China, and across the European Union. April Gate's records are designed to meet the standards of electronic evidence — with an unbroken chain of custody from physical sensor to blockchain record. As with any expert evidence, an expert witness would present the methodology to the court.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">Does April Gate have access to the raw temperature data?</div>
+        <div class="faq-answer">Raw temperature data is stored off-chain, encrypted with the customer's own encryption key. April Gate does not hold the decryption key and cannot access the raw data. The on-chain record contains only the mathematical proof — which confirms conditions were met without revealing proprietary details such as exact readings, timing, or routing information.</div>
+      </div>
+      <div class="faq-item" onclick="toggleFaq(this)">
+        <div class="faq-question">What does "zero-knowledge proof" mean in plain terms?</div>
+        <div class="faq-answer">A zero-knowledge proof is a mathematical method that lets one party prove a statement is true without revealing any additional information. In April Gate's context: the sensors prove that temperature stayed within the required range throughout the journey — without revealing the exact temperature at any given moment, where the shipment was, or when specific readings occurred. The insurer gets confirmation. The shipper's operational data stays private.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="contact-strip">
+    <div class="contact-strip-title">Ready to eliminate cold chain disputes?</div>
+    <p class="contact-strip-sub">We are seeking pilot partners in pharmaceutical cargo insurance and distribution. 20 minutes is all it takes.</p>
+    <a href="mailto:irina@aprilgatehq.com" class="contact-strip-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+      GET IN TOUCH
+    </a>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">APRIL // GATE</div>
+    <div class="footer-links">
+      <a href="index.html" class="footer-link">Home</a>
+      <a href="dashboard.html" class="footer-link">Dashboard</a>
+      <a href="how-it-works.html" class="footer-link">Legal &amp; Compliance</a>
+      <a href="whitepaper.pdf" target="_blank" class="footer-link" style="color:var(--accent);">Whitepaper</a>
+      <a href="mailto:irina@aprilgatehq.com" class="footer-link">Contact</a>
+    </div>
+    <div class="footer-copy">© 2026 April Gate · Patent Pending</div>
+  </footer>
+
+  <script>
+    const API_BASE = 'http://localhost:8080/api';
+
+    // Pre-fill from URL param: aprilgatehq.com/verify?shipment=SHP-2026-0421
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const shipment = params.get('shipment') || params.get('tx');
+      if (shipment) {
+        document.getElementById('verifyInput').value = shipment;
+        verify();
+      }
+    });
+
+    async function verify() {
+      const input = document.getElementById('verifyInput').value.trim();
+      if (!input) return;
+
+      const btn = document.getElementById('verifyBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>VERIFYING';
+
+      // Try real API first
+      let data = null;
+      try {
+        const res = await fetch(`${API_BASE}/proofs/${encodeURIComponent(input)}`, {
+          signal: AbortSignal.timeout(4000)
+        });
+        if (res.ok) data = await res.json();
+      } catch {}
+
+      // Fall back to mock for demo
+      if (!data) {
+        data = getMockResult(input);
+      }
+
+      renderResult(input, data);
+
+      btn.disabled = false;
+      btn.textContent = 'VERIFY';
+    }
+
+    function getMockResult(input) {
+      // Simulate a tamper alert for demo purposes
+      const isTampered = input.toLowerCase().includes('bad') || input.toLowerCase().includes('fail');
+      if (isTampered) {
+        return {
+          valid: false,
+          shipment_id: input,
+          temp_min: 4.1,
+          temp_max: 12.7,
+          spec_min: 2.0,
+          spec_max: 8.0,
+          sensors_agreed: 3,
+          sensors_total: 4,
+          tamper_events: 1,
+          gap_events: 1,
+          tx_hash: '3mKxRp7NwQaLvZtYuBfGhoCjEiDsAnXp2rMo8VkWe4nL',
+          verified_at: Date.now() - 86400000,
+          in_spec: false,
+        };
+      }
+      return {
+        valid: true,
+        shipment_id: input,
+        temp_min: 2.1,
+        temp_max: 7.8,
+        spec_min: 2.0,
+        spec_max: 8.0,
+        sensors_agreed: 4,
+        sensors_total: 4,
+        tamper_events: 0,
+        gap_events: 2,
+        tx_hash: '5KqPmN8xR7vYeLp2dQwJkTsAoCuBfGhiXZ3rMn4E9mVo',
+        verified_at: Date.now() - 3600000,
+        in_spec: true,
+      };
+    }
+
+    function renderResult(input, data) {
+      const result = document.getElementById('verifyResult');
+      const icon   = document.getElementById('resultIcon');
+      const head   = document.getElementById('resultHeadline');
+      const sub    = document.getElementById('resultSubline');
+      const plain  = document.getElementById('plainEnglishBox');
+
+      result.className = 'verify-result show';
+
+      if (data.valid && data.in_spec) {
+        icon.className  = 'result-icon valid';
+        icon.textContent = '✓';
+        head.className  = 'result-headline valid';
+        head.textContent = 'Shipment Conditions Verified';
+        sub.textContent  = 'All sensors in agreement · Temperature within specification · No tampering detected';
+        plain.innerHTML  = '<strong>In plain English:</strong> The sensors aboard this shipment independently measured and agreed on temperature conditions throughout transit. A mathematical certificate of that agreement is recorded permanently on the Solana blockchain. This certificate cannot be altered, backdated, or disputed.';
+      } else if (!data.in_spec) {
+        icon.className  = 'result-icon warn';
+        icon.textContent = '!';
+        head.className  = 'result-headline warn';
+        head.textContent = 'Temperature Excursion Detected';
+        sub.textContent  = 'Conditions exceeded specification during transit · See blockchain record for details';
+        plain.innerHTML  = '<strong>In plain English:</strong> The sensors detected that temperature exceeded the required range at some point during transit. This event is recorded permanently and cannot be disputed or removed from the record.';
+      } else {
+        icon.className  = 'result-icon invalid';
+        icon.textContent = '✗';
+        head.className  = 'result-headline invalid';
+        head.textContent = 'Verification Failed';
+        sub.textContent  = 'Tamper event detected · Sensor consensus broken · See blockchain record';
+        plain.innerHTML  = '<strong>In plain English:</strong> The system detected that one or more sensors were interfered with during transit. The remaining sensors recorded this event permanently. The record cannot be altered.';
+      }
+
+      document.getElementById('rShipmentId').textContent = data.shipment_id || input;
+      document.getElementById('rResult').textContent     = data.valid && data.in_spec ? 'VALID' : 'INVALID';
+      document.getElementById('rResult').className       = `result-cell-value ${data.valid && data.in_spec ? 'good' : 'bad'}`;
+      document.getElementById('rTemp').textContent       = `${data.temp_min?.toFixed(1)}°C – ${data.temp_max?.toFixed(1)}°C`;
+      document.getElementById('rSpec').textContent       = `${data.spec_min}°C – ${data.spec_max}°C`;
+      document.getElementById('rSensors').textContent    = `${data.sensors_agreed} of ${data.sensors_total}`;
+      document.getElementById('rSensors').className      = `result-cell-value ${data.sensors_agreed === data.sensors_total ? 'good' : 'bad'}`;
+      document.getElementById('rTamper').textContent     = data.tamper_events === 0 ? 'None detected' : `${data.tamper_events} event(s)`;
+      document.getElementById('rTamper').className       = `result-cell-value ${data.tamper_events === 0 ? 'good' : 'bad'}`;
+      document.getElementById('rProof').textContent      = data.valid ? 'Mathematically valid' : 'Invalid';
+      document.getElementById('rProof').className        = `result-cell-value ${data.valid ? 'good' : 'bad'}`;
+      document.getElementById('rTime').textContent       = new Date(data.verified_at).toLocaleString();
+
+      const hash = data.tx_hash || '—';
+      document.getElementById('rTxHash').textContent = hash;
+      const link = document.getElementById('rTxLink');
+      if (data.tx_hash) {
+        link.href = `https://explorer.solana.com/tx/${data.tx_hash}?cluster=devnet`;
+        link.style.display = 'inline';
+      } else {
+        link.style.display = 'none';
+      }
+
+      result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function toggleFaq(el) {
+      el.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

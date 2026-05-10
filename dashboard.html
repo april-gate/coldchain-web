@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — Operations Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#060a0e;--bg2:#0a1018;--surface:#0f1922;--border:#1e2d3d;--border2:#243545;
+      --accent:#00d4a8;--accent2:#0088ff;--warn:#ffa500;--danger:#ff4444;
+      --dim:rgba(0,212,168,0.08);--text:#8aa8c0;--text2:#c8d8e8;--text3:#e8f4ff;
+      --mono:'Share Tech Mono',monospace;--display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;
+      --chain-color:#9945ff;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden}
+    body{background:var(--bg);color:var(--text);font-family:var(--body);font-weight:300;display:flex;flex-direction:column}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,168,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,168,0.02) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+
+    /* TOPBAR */
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 1.25rem;height:52px;background:rgba(6,10,14,0.97);border-bottom:1px solid var(--border);position:relative;z-index:100;flex-shrink:0;gap:1rem}
+    .topbar-left{display:flex;align-items:center;gap:1.5rem;flex-shrink:0}
+    .logo{font-family:var(--mono);font-size:0.8rem;color:var(--accent);letter-spacing:0.2em}
+    .logo span{color:var(--border2)}
+    .view-toggle{display:flex;border:1px solid var(--border)}
+    .view-btn{font-family:var(--mono);font-size:0.62rem;letter-spacing:0.12em;padding:0.4rem 0.9rem;background:transparent;border:none;border-right:1px solid var(--border);color:var(--text);cursor:pointer;transition:all 0.2s}
+    .view-btn:last-child{border-right:none}
+    .view-btn.active{background:var(--dim);color:var(--accent)}
+
+    .topbar-center{display:flex;align-items:center;gap:0.75rem;flex:1;justify-content:center}
+
+    /* Chain selector */
+    .chain-selector{display:flex;align-items:center;gap:0.5rem;border:1px solid var(--border);padding:0 0.75rem;height:30px;background:var(--surface);transition:border-color 0.3s}
+    .chain-selector:hover{border-color:var(--chain-color)}
+    .chain-selector-label{font-family:var(--mono);font-size:0.58rem;color:var(--text);letter-spacing:0.15em;white-space:nowrap}
+    .chain-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--chain-color);animation:pulse-chain 2s infinite}
+    @keyframes pulse-chain{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(153,69,255,0.4)}50%{opacity:0.7;box-shadow:0 0 0 4px rgba(153,69,255,0)}}
+    .chain-select{background:transparent;border:none;color:var(--text2);font-family:var(--mono);font-size:0.65rem;cursor:pointer;letter-spacing:0.06em;outline:none;appearance:none;-webkit-appearance:none;padding-right:0.25rem}
+    .chain-select option{background:#0f1922;color:var(--text2)}
+    .chain-caret{font-size:0.45rem;color:var(--text);pointer-events:none;margin-left:-0.25rem}
+
+    .storage-selector{display:flex;align-items:center;gap:0.5rem;border:1px solid var(--border);padding:0 0.75rem;height:30px;background:var(--surface);transition:border-color 0.3s}
+    .storage-selector:hover{border-color:var(--accent2)}
+    .storage-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--accent2);animation:pulse-store 2.5s infinite}
+    @keyframes pulse-store{0%,100%{opacity:1}50%{opacity:0.5}}
+
+    .topbar-right{display:flex;align-items:center;gap:1rem;flex-shrink:0}
+    .shipment-selector{display:flex;align-items:center;gap:0.4rem;font-family:var(--mono);font-size:0.6rem;color:var(--text)}
+    .shipment-selector select{background:var(--surface);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:0.6rem;padding:0.25rem 0.4rem;cursor:pointer;letter-spacing:0.05em}
+    .system-status{display:flex;align-items:center;gap:0.4rem;font-family:var(--mono);font-size:0.62rem;color:var(--text);letter-spacing:0.08em}
+    .status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+    .status-dot.warn{background:var(--warn)}
+    .status-dot.danger{background:var(--danger);animation:pulse-d 1s infinite}
+    @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,212,168,0.4)}50%{opacity:0.7;box-shadow:0 0 0 4px rgba(0,212,168,0)}}
+    @keyframes pulse-d{0%,100%{opacity:1}50%{opacity:0.2}}
+
+    /* MAIN */
+    .main{display:flex;flex:1;overflow:hidden;position:relative;z-index:1}
+
+    /* SIDEBAR */
+    .sidebar{width:255px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;background:var(--bg2)}
+    .sidebar-section{border-bottom:1px solid var(--border);padding:0.9rem}
+    .sidebar-label{font-family:var(--mono);font-size:0.58rem;color:var(--text);letter-spacing:0.25em;margin-bottom:0.65rem}
+
+    .node-card{background:var(--surface);border:1px solid var(--border);padding:0.65rem;margin-bottom:0.4rem;position:relative;overflow:hidden;transition:border-color 0.3s}
+    .node-card.active{border-color:rgba(0,212,168,0.4)}
+    .node-card.warn{border-color:rgba(255,165,0,0.5)}
+    .node-card.danger{border-color:rgba(255,68,68,0.5)}
+    .node-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent)}
+    .node-card.warn::before{background:var(--warn)}
+    .node-card.danger::before{background:var(--danger)}
+    .node-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem}
+    .node-id{font-family:var(--mono);font-size:0.65rem;color:var(--text2);letter-spacing:0.08em}
+    .node-badge{font-family:var(--mono);font-size:0.52rem;padding:0.12rem 0.35rem;letter-spacing:0.08em;border:1px solid}
+    .badge-ok{color:var(--accent);border-color:rgba(0,212,168,0.3);background:rgba(0,212,168,0.08)}
+    .badge-warn{color:var(--warn);border-color:rgba(255,165,0,0.3);background:rgba(255,165,0,0.08)}
+    .badge-danger{color:var(--danger);border-color:rgba(255,68,68,0.3);background:rgba(255,68,68,0.08)}
+    .badge-offline{color:var(--text);border-color:var(--border)}
+    .node-temp{font-family:var(--display);font-size:1.7rem;color:var(--text3);line-height:1}
+    .node-temp.warn{color:var(--warn)}
+    .node-temp.danger{color:var(--danger)}
+    .node-meta{font-family:var(--mono);font-size:0.57rem;color:var(--text);margin-top:0.2rem}
+
+    .proof-card{background:var(--surface);border:1px solid var(--border);padding:0.65rem;margin-bottom:0.4rem}
+    .proof-status{display:flex;align-items:center;gap:0.4rem;margin-bottom:0.4rem}
+    .proof-label{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.05em}
+    .proof-hash{font-family:var(--mono);font-size:0.55rem;color:var(--accent2);cursor:pointer;text-decoration:underline;word-break:break-all}
+    .proof-time{font-family:var(--mono);font-size:0.57rem;color:var(--text);margin-top:0.2rem}
+
+    /* Config panel */
+    .config-panel{background:var(--surface);border:1px solid var(--border);padding:0.65rem;margin-top:0.5rem}
+    .config-row{display:flex;justify-content:space-between;padding:0.28rem 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.57rem;gap:0.5rem}
+    .config-row:last-child{border-bottom:none}
+    .config-key{color:var(--text);white-space:nowrap}
+    .config-val{color:var(--accent2);word-break:break-all;text-align:right}
+    .config-val.chain-val{color:var(--chain-color)}
+    .config-val.store-val{color:var(--accent)}
+
+    .register-form{display:flex;flex-direction:column;gap:0.4rem}
+    .form-input{background:var(--surface);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:0.62rem;padding:0.45rem 0.65rem;transition:border-color 0.2s;width:100%}
+    .form-input:focus{outline:none;border-color:var(--accent)}
+    .form-input::placeholder{color:var(--text)}
+    .form-btn{background:var(--accent);border:none;color:#060a0e;font-family:var(--mono);font-size:0.62rem;letter-spacing:0.12em;padding:0.55rem;cursor:pointer;transition:all 0.2s;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%)}
+    .form-btn:hover{background:#00f0c0}
+    .form-btn:disabled{background:var(--border);color:var(--text);cursor:not-allowed}
+
+    /* CONTENT */
+    .content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .view-panel{display:none;flex:1;overflow:hidden}
+    .view-panel.active{display:flex;flex-direction:column}
+
+    /* OPERATOR */
+    .operator-grid{display:grid;grid-template-rows:auto 1fr;height:100%;overflow:hidden}
+    .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border);flex-shrink:0}
+    .stat-cell{padding:0.65rem 1rem;border-right:1px solid var(--border)}
+    .stat-cell:last-child{border-right:none}
+    .stat-label{font-family:var(--mono);font-size:0.52rem;color:var(--text);letter-spacing:0.18em;margin-bottom:0.2rem}
+    .stat-value{font-family:var(--display);font-size:1.5rem;color:var(--text3);line-height:1}
+    .stat-value.accent{color:var(--accent)}
+    .stat-value.warn{color:var(--warn)}
+    .stat-value.danger{color:var(--danger)}
+    .stat-value.chain{color:var(--chain-color)}
+    .stat-sub{font-family:var(--mono);font-size:0.52rem;color:var(--text);margin-top:0.15rem}
+
+    .chart-container{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0.9rem;gap:0.75rem}
+    .chart-header{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .chart-title{font-family:var(--mono);font-size:0.65rem;color:var(--text2);letter-spacing:0.12em}
+    .chart-controls{display:flex;gap:0.4rem;align-items:center}
+    .chart-toggle{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.08em;padding:0.28rem 0.65rem;background:transparent;border:1px solid var(--border);color:var(--text);cursor:pointer;transition:all 0.2s}
+    .chart-toggle.active{border-color:var(--accent);color:var(--accent);background:var(--dim)}
+    .chart-toggle:hover:not(.active){color:var(--text2)}
+    .chart-wrap{flex:1;background:var(--surface);border:1px solid var(--border);padding:0.75rem;position:relative;min-height:0}
+
+    /* PUBLIC VIEW */
+    .public-view{flex:1;overflow-y:auto;padding:1.25rem}
+    .public-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap}
+    .public-title{font-family:var(--display);font-size:1.8rem;color:var(--text3);letter-spacing:0.05em}
+    .validity-badge{font-family:var(--mono);font-size:0.7rem;padding:0.45rem 1rem;letter-spacing:0.12em;border:1px solid;display:flex;align-items:center;gap:0.4rem}
+    .validity-badge.valid{color:var(--accent);border-color:rgba(0,212,168,0.4);background:rgba(0,212,168,0.08)}
+    .validity-badge.invalid{color:var(--danger);border-color:rgba(255,68,68,0.4);background:rgba(255,68,68,0.08)}
+    .chain-info-bar{display:flex;align-items:center;gap:1rem;background:var(--surface);border:1px solid var(--border);padding:0.65rem 1rem;margin-bottom:1rem;flex-wrap:wrap}
+    .chain-info-item{display:flex;flex-direction:column;gap:0.1rem}
+    .chain-info-label{font-family:var(--mono);font-size:0.52rem;color:var(--text);letter-spacing:0.15em}
+    .chain-info-value{font-family:var(--mono);font-size:0.7rem;color:var(--text2)}
+    .chain-info-value.chain-col{color:var(--chain-color)}
+    .chain-info-value.store-col{color:var(--accent)}
+    .chain-info-sep{width:1px;height:30px;background:var(--border);flex-shrink:0}
+    .proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.25rem}
+    .proof-detail-card{background:var(--surface);border:1px solid var(--border);padding:0.9rem;position:relative}
+    .proof-detail-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+    .proof-detail-label{font-family:var(--mono);font-size:0.57rem;color:var(--text);letter-spacing:0.18em;margin-bottom:0.4rem}
+    .proof-detail-value{font-family:var(--display);font-size:1.6rem;color:var(--text3);line-height:1}
+    .proof-detail-sub{font-family:var(--mono);font-size:0.57rem;color:var(--text);margin-top:0.2rem}
+    .solana-link{display:flex;align-items:center;gap:0.65rem;background:var(--surface);border:1px solid var(--border);padding:0.75rem 1rem;margin-bottom:0.75rem}
+    .solana-link-label{font-family:var(--mono);font-size:0.57rem;color:var(--text);letter-spacing:0.12em;white-space:nowrap}
+    .solana-link-hash{font-family:var(--mono);font-size:0.65rem;color:var(--accent2);flex:1;word-break:break-all}
+    .solana-link-btn{font-family:var(--mono);font-size:0.57rem;color:var(--accent2);border:1px solid rgba(0,136,255,0.3);background:rgba(0,136,255,0.08);padding:0.28rem 0.65rem;cursor:pointer;text-decoration:none;letter-spacing:0.08em;white-space:nowrap}
+    .event-log{background:var(--surface);border:1px solid var(--border)}
+    .event-log-header{padding:0.65rem 1rem;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.62rem;color:var(--text2);letter-spacing:0.12em}
+    .event-entry{display:flex;align-items:center;gap:0.9rem;padding:0.55rem 1rem;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:0.62rem}
+    .event-entry:last-child{border-bottom:none}
+    .event-time{color:var(--text);min-width:130px}
+    .event-type{min-width:90px}
+    .event-msg{color:var(--text2);flex:1}
+    .type-proof{color:var(--accent)}
+    .type-gap{color:var(--warn)}
+    .type-tamper{color:var(--danger)}
+    .type-register{color:var(--accent2)}
+
+    .loading{display:flex;align-items:center;justify-content:center;height:100%;font-family:var(--mono);font-size:0.7rem;color:var(--text);letter-spacing:0.2em;gap:0.5rem}
+    .loading-dots span{animation:blink 1.4s infinite;color:var(--accent)}
+    .loading-dots span:nth-child(2){animation-delay:0.2s}
+    .loading-dots span:nth-child(3){animation-delay:0.4s}
+    @keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+
+    .toast-container{position:fixed;bottom:1.25rem;right:1.25rem;z-index:1000;display:flex;flex-direction:column;gap:0.4rem}
+    .toast{font-family:var(--mono);font-size:0.67rem;letter-spacing:0.08em;padding:0.65rem 1rem;border:1px solid;background:var(--surface);animation:slideIn 0.3s ease;max-width:300px}
+    .toast.success{color:var(--accent);border-color:rgba(0,212,168,0.3)}
+    .toast.error{color:var(--danger);border-color:rgba(255,68,68,0.3)}
+    .toast.info{color:var(--accent2);border-color:rgba(0,136,255,0.3)}
+    @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--border2)}
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <a href="index.html" style="text-decoration:none;">
+        <div class="logo">APRIL<span>//</span>GATE</div>
+      </a>
+      <div style="display:flex;gap:0.6rem;margin-left:0.75rem;align-items:center;">
+        <a href="index.html" style="font-family:var(--mono);font-size:0.57rem;color:var(--text2);letter-spacing:0.1em;text-decoration:none;border:1px solid var(--border);padding:0.2rem 0.55rem;">HOME</a>
+        <a href="whitepaper.pdf" target="_blank" style="font-family:var(--mono);font-size:0.57rem;color:#00d4a8;letter-spacing:0.1em;text-decoration:none;border:1px solid rgba(0,212,168,0.4);padding:0.2rem 0.55rem;">WHITEPAPER</a>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="switchView('operator')">OPERATOR</button>
+        <button class="view-btn" onclick="switchView('public')">PUBLIC / INSURER</button>
+      </div>
+    </div>
+
+    <!-- CENTER: BLOCKCHAIN + STORAGE SELECTORS -->
+    <div class="topbar-center">
+      <div class="chain-selector">
+        <div class="chain-selector-label">CHAIN:</div>
+        <div class="chain-dot" id="chainDot"></div>
+        <select class="chain-select" id="chainSelect" onchange="onChainChange(this.value)">
+          <option value="solana">Solana (Active)</option>
+          <option value="gonka">Gonka</option>
+          <option value="ethereum">Ethereum</option>
+          <option value="sui">Sui</option>
+          <option value="aptos">Aptos</option>
+          <option value="other">Other (write-in)</option>
+        </select>
+        <span class="chain-caret">▼</span>
+      </div>
+      <div id="otherChainWrap" style="display:none;align-items:center;gap:0.4rem;margin-left:0.5rem;">
+        <input id="otherChainInput" type="text" placeholder="Chain name..."
+          style="background:var(--surface);border:1px solid var(--border);color:var(--text2);font-family:var(--mono);font-size:0.62rem;padding:0.3rem 0.5rem;width:120px;outline:none;letter-spacing:0.05em;"
+          oninput="onOtherChainInput(this.value)">
+      </div>
+
+      <div class="storage-selector chain-selector">
+        <div class="chain-selector-label">STORAGE:</div>
+        <div class="storage-dot"></div>
+        <select class="chain-select" id="storageSelect" onchange="onStorageChange(this.value)">
+          <option value="arweave">Arweave (Recommended)</option>
+          <option value="ipfs">IPFS</option>
+          <option value="filecoin">Filecoin</option>
+        </select>
+        <span class="chain-caret">▼</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="shipment-selector">
+        SHP:
+        <select id="shipmentSelect" onchange="loadShipment(this.value)">
+          <option value="SHP-2026-0421">SHP-2026-0421</option>
+          <option value="SHP-2026-0418">SHP-2026-0418</option>
+          <option value="SHP-2026-0415">SHP-2026-0415</option>
+        </select>
+      </div>
+      <div class="system-status">
+        <div class="status-dot" id="systemDot"></div>
+        <span id="systemStatus">CONNECTING...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">// SENSOR NODES</div>
+        <div id="nodeCards">
+          <div class="loading" style="height:100px;font-size:0.6rem;">
+            CONNECTING<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">// LATEST PROOF</div>
+        <div id="proofStatus">
+          <div class="loading" style="height:70px;font-size:0.6rem;">
+            LOADING<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">// NETWORK CONFIG</div>
+        <div class="config-panel" id="configPanel">
+          <div class="config-row"><span class="config-key">CHAIN</span><span class="config-val chain-val" id="cfgChain">Solana</span></div>
+          <div class="config-row"><span class="config-key">NETWORK</span><span class="config-val chain-val" id="cfgNetwork">Devnet</span></div>
+          <div class="config-row"><span class="config-key">RPC</span><span class="config-val" id="cfgRpc">api.devnet.solana.com</span></div>
+          <div class="config-row"><span class="config-key">PROGRAM</span><span class="config-val" id="cfgProgram">ApGt...xxxx</span></div>
+          <div class="config-row"><span class="config-key">STORAGE</span><span class="config-val store-val" id="cfgStorage">Arweave</span></div>
+          <div class="config-row"><span class="config-key">TXN COST</span><span class="config-val" id="cfgCost">~$0.00025</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">// REGISTER DEVICE</div>
+        <div class="register-form">
+          <input class="form-input" id="regDeviceId" placeholder="DEVICE ID" />
+          <input class="form-input" id="regPubkey" placeholder="PUBLIC KEY (HEX)" />
+          <input class="form-input" id="regShipmentId" placeholder="SHIPMENT ID" />
+          <button class="form-btn" onclick="registerDevice()">REGISTER SENSOR</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- OPERATOR VIEW -->
+      <div class="view-panel active" id="operatorView">
+        <div class="operator-grid">
+          <div class="stats-bar">
+            <div class="stat-cell">
+              <div class="stat-label">// ACTIVE NODES</div>
+              <div class="stat-value accent" id="statNodes">—</div>
+              <div class="stat-sub" id="statNodesTotal">of 4 registered</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-label">// CONSENSUS</div>
+              <div class="stat-value accent" id="statConsensus">—</div>
+              <div class="stat-sub" id="statConsensusTime">last check</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-label">// AVG TEMPERATURE</div>
+              <div class="stat-value" id="statTemp">—</div>
+              <div class="stat-sub">target: 2–8°C</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-label">// CHAIN</div>
+              <div class="stat-value chain" id="statChain">SOLANA</div>
+              <div class="stat-sub" id="statChainSub">devnet · $0.00025/proof</div>
+            </div>
+            <div class="stat-cell">
+              <div class="stat-label">// ALERTS</div>
+              <div class="stat-value" id="statAlerts">—</div>
+              <div class="stat-sub">tamper / gap events</div>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <div class="chart-header">
+              <div class="chart-title">// TEMPERATURE TIMELINE — <span id="chartShipmentId">SHP-2026-0421</span> — <span id="chartChainLabel" style="color:var(--chain-color)">SOLANA DEVNET</span></div>
+              <div class="chart-controls">
+                <button class="chart-toggle active" id="toggleLine" onclick="setChartMode('line')">LINE</button>
+                <button class="chart-toggle" id="toggleBand" onclick="setChartMode('band')">CONSENSUS BAND</button>
+                <button class="chart-toggle active" id="toggleRefresh" onclick="toggleAutoRefresh()">⟳ AUTO</button>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="tempChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PUBLIC VIEW -->
+      <div class="view-panel" id="publicView">
+        <div class="public-view">
+          <div class="public-header">
+            <div>
+              <div style="font-family:var(--mono);font-size:0.62rem;color:var(--text);letter-spacing:0.2em;margin-bottom:0.4rem">// SHIPMENT VERIFICATION</div>
+              <div class="public-title" id="pubShipmentTitle">SHP-2026-0421</div>
+            </div>
+            <div class="validity-badge valid" id="validityBadge">
+              <span>✓</span> CRYPTOGRAPHICALLY VALID
+            </div>
+          </div>
+
+          <!-- Chain info bar -->
+          <div class="chain-info-bar">
+            <div class="chain-info-item">
+              <div class="chain-info-label">// BLOCKCHAIN</div>
+              <div class="chain-info-value chain-col" id="pubChainName">Solana</div>
+            </div>
+            <div class="chain-info-sep"></div>
+            <div class="chain-info-item">
+              <div class="chain-info-label">// NETWORK</div>
+              <div class="chain-info-value chain-col" id="pubNetwork">Devnet</div>
+            </div>
+            <div class="chain-info-sep"></div>
+            <div class="chain-info-item">
+              <div class="chain-info-label">// OFF-CHAIN STORAGE</div>
+              <div class="chain-info-value store-col" id="pubStorage">Arweave</div>
+            </div>
+            <div class="chain-info-sep"></div>
+            <div class="chain-info-item">
+              <div class="chain-info-label">// PROOF COST</div>
+              <div class="chain-info-value" id="pubCost">~$0.00025</div>
+            </div>
+            <div class="chain-info-sep"></div>
+            <div class="chain-info-item">
+              <div class="chain-info-label">// FINALITY</div>
+              <div class="chain-info-value" id="pubFinality">&lt;1 second</div>
+            </div>
+          </div>
+
+          <div class="proof-grid">
+            <div class="proof-detail-card">
+              <div class="proof-detail-label">// CONSENSUS RESULT</div>
+              <div class="proof-detail-value accent" id="pubConsensus">VALID</div>
+              <div class="proof-detail-sub">All sensors in agreement</div>
+            </div>
+            <div class="proof-detail-card">
+              <div class="proof-detail-label">// TEMPERATURE RANGE</div>
+              <div class="proof-detail-value" id="pubTempRange">2.1–7.8°C</div>
+              <div class="proof-detail-sub">Within 2–8°C specification</div>
+            </div>
+            <div class="proof-detail-card">
+              <div class="proof-detail-label">// SENSORS AGREED</div>
+              <div class="proof-detail-value accent" id="pubSensors">4/4</div>
+              <div class="proof-detail-sub">Hardware-signed readings</div>
+            </div>
+            <div class="proof-detail-card">
+              <div class="proof-detail-label">// TAMPER EVENTS</div>
+              <div class="proof-detail-value" id="pubTamper">0</div>
+              <div class="proof-detail-sub">No anomalies detected</div>
+            </div>
+            <div class="proof-detail-card">
+              <div class="proof-detail-label">// CONNECTIVITY GAPS</div>
+              <div class="proof-detail-value" id="pubGaps">2</div>
+              <div class="proof-detail-sub">Expected during transit</div>
+            </div>
+            <div class="proof-detail-card">
+              <div class="proof-detail-label">// ZK PROOF VERIFIED</div>
+              <div class="proof-detail-value accent" id="pubZK">✓</div>
+              <div class="proof-detail-sub">Mathematically proven</div>
+            </div>
+          </div>
+
+          <div class="solana-link">
+            <div class="solana-link-label" id="explorerLabel">// SOLANA TX</div>
+            <div class="solana-link-hash" id="solanaTxHash">Loading transaction hash...</div>
+            <a class="solana-link-btn" id="solanaExplorerLink" href="#" target="_blank">VIEW ON EXPLORER →</a>
+          </div>
+
+          <div class="event-log">
+            <div class="event-log-header">// AUDIT TRAIL</div>
+            <div id="eventLog">
+              <div class="loading" style="height:70px;font-size:0.6rem;">
+                LOADING<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // ── CHAIN CONFIGS ──
+    const CHAINS = {
+      solana: {
+        name: 'Solana',
+        network: 'Devnet',
+        rpc: 'api.devnet.solana.com',
+        explorer: 'https://explorer.solana.com/tx/{hash}?cluster=devnet',
+        explorerLabel: 'SOLANA EXPLORER',
+        cost: '~$0.00025',
+        finality: '<1 second',
+        color: '#9945ff',
+        statLabel: 'SOLANA',
+        statSub: 'devnet · $0.00025/proof',
+        chartLabel: 'SOLANA DEVNET',
+      },
+      ethereum: {
+        name: 'Ethereum',
+        network: 'Sepolia Testnet',
+        rpc: 'sepolia.infura.io/v3/...',
+        explorer: 'https://sepolia.etherscan.io/tx/{hash}',
+        explorerLabel: 'ETHERSCAN',
+        cost: '~$2–50',
+        finality: '~12 seconds',
+        color: '#627eea',
+        statLabel: 'ETHEREUM',
+        statSub: 'sepolia · variable gas',
+        chartLabel: 'ETHEREUM SEPOLIA',
+      },
+      gonka: {
+        name: 'Gonka',
+        network: 'Testnet',
+        rpc: 'rpc.testnet.gonka.ai',
+        explorer: 'https://explorer.gonka.ai/tx/{hash}',
+        explorerLabel: 'GONKA EXPLORER',
+        cost: '~$0.001',
+        finality: '<1 second',
+        color: '#00d4a8',
+        statLabel: 'GONKA',
+        statSub: 'testnet · Proof-of-Compute',
+        chartLabel: 'GONKA TESTNET',
+      },
+      other: {
+        name: 'Other',
+        network: 'Custom',
+        rpc: 'custom-rpc-endpoint',
+        explorer: '{hash}',
+        explorerLabel: 'CUSTOM EXPLORER',
+        cost: 'varies',
+        finality: 'varies',
+        color: '#aaaaaa',
+        statLabel: 'CUSTOM',
+        statSub: 'custom chain',
+        chartLabel: 'CUSTOM CHAIN',
+      },
+      sui: {
+        name: 'Sui',
+        network: 'Testnet',
+        rpc: 'fullnode.testnet.sui.io',
+        explorer: 'https://suiexplorer.com/txblock/{hash}?network=testnet',
+        explorerLabel: 'SUI EXPLORER',
+        cost: '~$0.001',
+        finality: '<1 second',
+        color: '#6fbcf0',
+        statLabel: 'SUI',
+        statSub: 'testnet · Move VM',
+        chartLabel: 'SUI TESTNET',
+      },
+      aptos: {
+        name: 'Aptos',
+        network: 'Testnet',
+        rpc: 'fullnode.testnet.aptoslabs.com',
+        explorer: 'https://explorer.aptoslabs.com/txn/{hash}?network=testnet',
+        explorerLabel: 'APTOS EXPLORER',
+        cost: '~$0.001',
+        finality: '<1 second',
+        color: '#00d4aa',
+        statLabel: 'APTOS',
+        statSub: 'testnet · Move VM',
+        chartLabel: 'APTOS TESTNET',
+      },
+    };
+
+    const STORAGES = {
+      arweave: { name: 'Arweave', desc: 'Permanent decentralized storage' },
+      ipfs:    { name: 'IPFS',    desc: 'Content-addressed P2P storage' },
+      filecoin:{ name: 'Filecoin',desc: 'Incentivized distributed storage' },
+    };
+
+    // ── STATE ──
+    const API_BASE = 'http://localhost:8080/api';
+    const REFRESH_INTERVAL = 5000;
+    const TEMP_MIN = 2.0;
+    const TEMP_MAX = 8.0;
+    let chart = null;
+    let chartMode = 'line';
+    let autoRefresh = true;
+    let refreshTimer = null;
+    let currentShipment = 'SHP-2026-0421';
+    let currentChain = 'solana';
+    let currentStorage = 'arweave';
+    let apiConnected = false;
+    let lastTxHash = null;
+
+    // ── CHAIN CHANGE ──
+    function onChainChange(chain) {
+      currentChain = chain;
+      const cfg = CHAINS[chain];
+
+      // Update CSS color variable
+      document.documentElement.style.setProperty('--chain-color', cfg.color);
+
+      // Update chain dot color
+      document.getElementById('chainDot').style.background = cfg.color;
+      document.getElementById('chainDot').style.boxShadow = `0 0 0 0 ${cfg.color}40`;
+
+      // Update config panel
+      document.getElementById('cfgChain').textContent = cfg.name;
+      document.getElementById('cfgNetwork').textContent = cfg.network;
+      document.getElementById('cfgRpc').textContent = cfg.rpc;
+
+      // Update stats bar
+      document.getElementById('statChain').textContent = cfg.statLabel;
+      document.getElementById('statChainSub').textContent = cfg.statSub;
+
+      // Update chart label
+      document.getElementById('chartChainLabel').textContent = cfg.chartLabel;
+
+      // Update public view
+      document.getElementById('pubChainName').textContent = cfg.name;
+      document.getElementById('pubNetwork').textContent = cfg.network;
+      document.getElementById('pubCost').textContent = cfg.cost;
+      document.getElementById('pubFinality').textContent = cfg.finality;
+      document.getElementById('explorerLabel').textContent = `// ${cfg.explorerLabel}`;
+
+      // Update explorer link
+      if (lastTxHash) {
+        updateExplorerLink(lastTxHash);
+      }
+
+      // Update API URL display
+      document.getElementById('cfgCost').textContent = cfg.cost;
+
+      // Show write-in field only for 'other'
+      const wrap = document.getElementById('otherChainWrap');
+      if (wrap) wrap.style.display = chain === 'other' ? 'flex' : 'none';
+
+      showToast(`Switched to ${cfg.name} · ${cfg.network}`, 'info');
+    }
+
+    function onOtherChainInput(val) {
+      if (!val.trim()) return;
+      const name = val.trim();
+      CHAINS['other'].name = name;
+      CHAINS['other'].statLabel = name.toUpperCase();
+      CHAINS['other'].chartLabel = name.toUpperCase();
+      document.getElementById('cfgChain').textContent = name;
+      document.getElementById('statChain').textContent = name.toUpperCase();
+      document.getElementById('chartChainLabel').textContent = name.toUpperCase();
+      document.getElementById('pubChainName').textContent = name;
+    }
+
+    function onStorageChange(storage) {
+      currentStorage = storage;
+      const s = STORAGES[storage];
+      document.getElementById('cfgStorage').textContent = s.name;
+      document.getElementById('pubStorage').textContent = s.name;
+      showToast(`Storage: ${s.name} — ${s.desc}`, 'info');
+    }
+
+    function updateExplorerLink(hash) {
+      const cfg = CHAINS[currentChain];
+      const url = cfg.explorer.replace('{hash}', hash);
+      const link = document.getElementById('solanaExplorerLink');
+      link.href = url;
+      link.textContent = `VIEW ON ${cfg.explorerLabel} →`;
+    }
+
+    // ── MOCK DATA ──
+    function generateMockTimeline() {
+      const now = Date.now();
+      return Array.from({length:61},(_,i) => ({
+        timestamp: now - (60-i)*60000,
+        nodes: {
+          'NODE-001': 4.0 + Math.sin(i*0.2)*0.5 + (Math.random()-0.5)*0.3,
+          'NODE-002': 4.3 + Math.sin(i*0.2+1)*0.4 + (Math.random()-0.5)*0.3,
+          'NODE-003': 3.8 + Math.sin(i*0.2+2)*0.6 + (Math.random()-0.5)*0.3,
+          'NODE-004': i>55 ? 9.1 : 4.1 + Math.sin(i*0.2+3)*0.5 + (Math.random()-0.5)*0.3,
+        }
+      }));
+    }
+
+    const mockData = {
+      nodes:[
+        {id:'NODE-001',temp:4.2,status:'ok',  verified:true, last_seen:Date.now()-8000},
+        {id:'NODE-002',temp:4.8,status:'ok',  verified:true, last_seen:Date.now()-6000},
+        {id:'NODE-003',temp:3.9,status:'ok',  verified:true, last_seen:Date.now()-9000},
+        {id:'NODE-004',temp:9.1,status:'warn',verified:true, last_seen:Date.now()-4000},
+      ],
+      consensus:{status:'ALERT',last_time:Date.now()-30000,proof_count:12,alert_count:1},
+      proof:{tx_hash:'5KqPmN8xR7vYeLp2dQwJkTsAoCuBfGhiXZ3rMn4E9mVo',valid:true,submitted_at:Date.now()-120000},
+      events:[
+        {time:Date.now()-30000, type:'tamper',  msg:'NODE-004 temperature excursion detected: 9.1°C'},
+        {time:Date.now()-120000,type:'proof',   msg:'ZK consensus proof submitted · on-chain verified'},
+        {time:Date.now()-300000,type:'gap',     msg:'Connectivity gap — 4min 12sec — readings buffered locally'},
+        {time:Date.now()-600000,type:'proof',   msg:'ZK consensus proof submitted · on-chain verified'},
+        {time:Date.now()-900000,type:'register',msg:'NODE-004 registered: pubkey 04a3b2c1...'},
+      ]
+    };
+
+    // ── API ──
+    async function fetchAPI(endpoint) {
+      try {
+        const res = await fetch(`${API_BASE}${endpoint}`,{signal:AbortSignal.timeout(3000)});
+        if(!res.ok) throw new Error();
+        apiConnected = true;
+        return await res.json();
+      } catch {
+        apiConnected = false;
+        return null;
+      }
+    }
+
+    async function postAPI(endpoint, body) {
+      try {
+        const res = await fetch(`${API_BASE}${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(5000)});
+        apiConnected = true;
+        return await res.json();
+      } catch {
+        apiConnected = false;
+        return null;
+      }
+    }
+
+    // ── RENDER ──
+    function updateSystemStatus(data) {
+      const dot = document.getElementById('systemDot');
+      const status = document.getElementById('systemStatus');
+      if(!apiConnected){dot.className='status-dot warn';status.textContent='DEMO MODE';return}
+      const alert = data?.nodes?.some(n=>n.status!=='ok');
+      dot.className = alert ? 'status-dot danger' : 'status-dot';
+      status.textContent = alert ? 'ALERT ACTIVE' : 'NOMINAL';
+    }
+
+    function renderNodeCards(nodes) {
+      document.getElementById('nodeCards').innerHTML = nodes.map(n => {
+        const cls = n.temp>TEMP_MAX||n.status==='warn'?'warn':n.status==='danger'?'danger':n.status==='offline'?'':'active';
+        const tempCls = n.temp>TEMP_MAX||n.temp<TEMP_MIN?'warn':'';
+        const badge = n.status==='offline'?'OFFLINE':n.temp>TEMP_MAX?'EXCURSION':n.verified?'VERIFIED':'UNVERIFIED';
+        const badgeCls = n.status==='offline'?'badge-offline':n.temp>TEMP_MAX?'badge-danger':n.verified?'badge-ok':'badge-warn';
+        const ago = Math.round((Date.now()-n.last_seen)/1000);
+        return `<div class="node-card ${cls}"><div class="node-header"><div class="node-id">${n.id}</div><div class="node-badge ${badgeCls}">${badge}</div></div><div class="node-temp ${tempCls}">${n.temp.toFixed(1)}°C</div><div class="node-meta">${ago}s ago · ${n.verified?'HW SIGNED':'UNVERIFIED'}</div></div>`;
+      }).join('');
+    }
+
+    function renderProofStatus(proof) {
+      lastTxHash = proof.tx_hash;
+      const short = proof.tx_hash ? proof.tx_hash.slice(0,8)+'...'+proof.tx_hash.slice(-4) : 'pending';
+      const ago = Math.round((Date.now()-proof.submitted_at)/1000);
+      document.getElementById('proofStatus').innerHTML = `<div class="proof-card"><div class="proof-status"><span style="color:${proof.valid?'var(--accent)':'var(--danger)'}">${proof.valid?'✓':'✗'}</span><div class="proof-label" style="color:${proof.valid?'var(--accent)':'var(--danger)'}">${proof.valid?'PROOF VALID':'PROOF INVALID'}</div></div><div class="proof-hash" onclick="openExplorer('${proof.tx_hash}')">${short}</div><div class="proof-time">${ago}s ago · ${CHAINS[currentChain].name}</div></div>`;
+      document.getElementById('solanaTxHash').textContent = proof.tx_hash || 'Awaiting...';
+      if(proof.tx_hash) updateExplorerLink(proof.tx_hash);
+    }
+
+    function renderStats(data) {
+      const nodes = data.nodes||[];
+      const active = nodes.filter(n=>n.status!=='offline').length;
+      const avgTemp = nodes.length ? (nodes.reduce((s,n)=>s+n.temp,0)/nodes.length).toFixed(1) : '—';
+      const tempOk = parseFloat(avgTemp)>=TEMP_MIN && parseFloat(avgTemp)<=TEMP_MAX;
+      document.getElementById('statNodes').textContent = active;
+      document.getElementById('statNodesTotal').textContent = `of ${nodes.length} registered`;
+      document.getElementById('statConsensus').textContent = data.consensus?.status||'—';
+      document.getElementById('statConsensusTime').textContent = data.consensus?.last_time ? `${Math.round((Date.now()-data.consensus.last_time)/1000)}s ago` : 'never';
+      document.getElementById('statTemp').textContent = `${avgTemp}°C`;
+      document.getElementById('statTemp').className = `stat-value ${tempOk?'':'warn'}`;
+      document.getElementById('statAlerts').textContent = data.consensus?.alert_count??'—';
+      document.getElementById('statAlerts').className = `stat-value ${(data.consensus?.alert_count||0)>0?'danger':'accent'}`;
+    }
+
+    function renderEvents(events) {
+      document.getElementById('eventLog').innerHTML = events.map(e => {
+        const d = new Date(e.time);
+        const ts = d.toLocaleDateString()+' '+d.toLocaleTimeString();
+        const tc = e.type==='proof'?'type-proof':e.type==='gap'?'type-gap':e.type==='tamper'?'type-tamper':'type-register';
+        return `<div class="event-entry"><span class="event-time">${ts}</span><span class="event-type ${tc}">${e.type.toUpperCase()}</span><span class="event-msg">${e.msg}</span></div>`;
+      }).join('');
+    }
+
+    function initChart(timeline) {
+      const ctx = document.getElementById('tempChart').getContext('2d');
+      const labels = timeline.map(p=>new Date(p.timestamp).toLocaleTimeString());
+      const nodeIds = Object.keys(timeline[0]?.nodes||{});
+      const colors = ['#00d4a8','#0088ff','#ff6b35','#ffa500'];
+
+      const datasets = chartMode==='line'
+        ? nodeIds.map((id,i)=>({label:id,data:timeline.map(p=>p.nodes[id]),borderColor:colors[i%colors.length],backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,pointHoverRadius:4,tension:0.3}))
+        : [
+            {label:'CONSENSUS MAX',data:timeline.map(p=>Math.max(...Object.values(p.nodes))),borderColor:'rgba(0,212,168,0.3)',backgroundColor:'rgba(0,212,168,0.07)',borderWidth:1,pointRadius:0,fill:'+1',tension:0.3},
+            {label:'CONSENSUS MIN',data:timeline.map(p=>Math.min(...Object.values(p.nodes))),borderColor:'rgba(0,212,168,0.3)',backgroundColor:'transparent',borderWidth:1,pointRadius:0,fill:false,tension:0.3},
+            ...nodeIds.map((id,i)=>({label:id,data:timeline.map(p=>p.nodes[id]),borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length],borderWidth:0,pointRadius:timeline.map(p=>{const vals=Object.values(p.nodes);const mean=vals.reduce((s,v)=>s+v,0)/vals.length;return Math.abs(p.nodes[id]-mean)>0.8?5:0}),showLine:false})),
+          ];
+
+      datasets.push({label:'MAX SPEC (8°C)',data:timeline.map(()=>TEMP_MAX),borderColor:'rgba(255,68,68,0.35)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false});
+      datasets.push({label:'MIN SPEC (2°C)',data:timeline.map(()=>TEMP_MIN),borderColor:'rgba(255,68,68,0.35)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false});
+
+      if(chart) chart.destroy();
+      chart = new Chart(ctx,{
+        type:'line',data:{labels,datasets},
+        options:{
+          responsive:true,maintainAspectRatio:false,animation:{duration:300},
+          plugins:{
+            legend:{labels:{color:'#8aa8c0',font:{family:'Share Tech Mono',size:10},boxWidth:10,padding:10}},
+            tooltip:{backgroundColor:'#0f1922',borderColor:'#1e2d3d',borderWidth:1,titleColor:'#00d4a8',bodyColor:'#c8d8e8',titleFont:{family:'Share Tech Mono',size:10},bodyFont:{family:'Share Tech Mono',size:10},callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y?.toFixed(2)}°C`}}
+          },
+          scales:{
+            x:{ticks:{color:'#556677',font:{family:'Share Tech Mono',size:9},maxTicksLimit:10},grid:{color:'rgba(30,45,61,0.5)'}},
+            y:{ticks:{color:'#556677',font:{family:'Share Tech Mono',size:9},callback:v=>`${v.toFixed(1)}°C`},grid:{color:'rgba(30,45,61,0.5)'},suggestedMin:0,suggestedMax:12}
+          }
+        }
+      });
+    }
+
+    // ── LOAD ──
+    async function loadData() {
+      const status = await fetchAPI('/consensus/status');
+      let data;
+
+      if(status) {
+        const [proof,timeline,events] = await Promise.all([
+          fetchAPI(`/proofs/${currentShipment}`),
+          fetchAPI(`/shipments/${currentShipment}/timeline`),
+          fetchAPI(`/shipments/${currentShipment}/events`),
+        ]);
+        data = {
+          nodes:(status.recent_readings||[]).map(r=>({id:`NODE-00${r.node_id+1}`,temp:r.temp,status:r.verified?'ok':'warn',verified:r.verified,last_seen:r.timestamp*1000})),
+          consensus:{status:status.status,last_time:(status.last_consensus||0)*1000,proof_count:0,alert_count:0},
+          proof:proof||{tx_hash:null,valid:false,submitted_at:Date.now()},
+          timeline:timeline||[],events:events||[],
+        };
+      } else {
+        data = mockData;
+        data.nodes = data.nodes.map(n=>({...n,temp:n.status==='warn'?n.temp:n.temp+(Math.random()-0.5)*0.1,last_seen:Date.now()-Math.random()*10000}));
+        data.timeline = generateMockTimeline();
+      }
+
+      updateSystemStatus(data);
+      renderNodeCards(data.nodes);
+      renderStats(data);
+      if(data.proof) renderProofStatus(data.proof);
+      if(data.timeline.length>0) initChart(data.timeline);
+      if(data.events.length>0) renderEvents(data.events);
+    }
+
+    // ── REGISTER ──
+    async function registerDevice() {
+      const deviceId = document.getElementById('regDeviceId').value.trim();
+      const pubkey = document.getElementById('regPubkey').value.trim();
+      const shipmentId = document.getElementById('regShipmentId').value.trim();
+      if(!deviceId||!pubkey||!shipmentId){showToast('All fields required','error');return}
+      const btn = document.querySelector('.form-btn');
+      btn.disabled=true;btn.textContent='REGISTERING...';
+      const result = await postAPI('/devices/register',{device_id:deviceId,pubkey,shipment_id:shipmentId,chain:currentChain});
+      btn.disabled=false;btn.textContent='REGISTER SENSOR';
+      if(result?.success) {
+        showToast(`${deviceId} registered on ${CHAINS[currentChain].name}','success`);
+        document.getElementById('regDeviceId').value='';
+        document.getElementById('regPubkey').value='';
+        document.getElementById('regShipmentId').value='';
+      } else if(!apiConnected) {
+        showToast(`Demo mode — connect Actix to register on ${CHAINS[currentChain].name}`,'info');
+      } else {
+        showToast('Registration failed','error');
+      }
+    }
+
+    // ── CONTROLS ──
+    function setChartMode(m) {
+      chartMode=m;
+      document.getElementById('toggleLine').className=`chart-toggle ${m==='line'?'active':''}`;
+      document.getElementById('toggleBand').className=`chart-toggle ${m==='band'?'active':''}`;
+      loadData();
+    }
+
+    function toggleAutoRefresh() {
+      autoRefresh=!autoRefresh;
+      document.getElementById('toggleRefresh').className=`chart-toggle ${autoRefresh?'active':''}`;
+      if(autoRefresh) startRefresh();
+      else if(refreshTimer) clearInterval(refreshTimer);
+    }
+
+    function switchView(view) {
+      document.querySelectorAll('.view-btn').forEach((b,i)=>{b.className=`view-btn ${(i===0&&view==='operator')||(i===1&&view==='public')?'active':''}`});
+      document.getElementById('operatorView').className=`view-panel ${view==='operator'?'active':''}`;
+      document.getElementById('publicView').className=`view-panel ${view==='public'?'active':''}`;
+    }
+
+    function loadShipment(id) {
+      currentShipment=id;
+      document.getElementById('chartShipmentId').textContent=id;
+      document.getElementById('pubShipmentTitle').textContent=id;
+      loadData();
+    }
+
+    function showToast(msg,type='info') {
+      const c=document.getElementById('toastContainer');
+      const t=document.createElement('div');
+      t.className=`toast ${type}`;t.textContent=msg;
+      c.appendChild(t);setTimeout(()=>t.remove(),4000);
+    }
+
+    function openExplorer(hash) {
+      if(hash) window.open(CHAINS[currentChain].explorer.replace('{hash}',hash),'_blank');
+    }
+
+    function startRefresh() {
+      if(refreshTimer) clearInterval(refreshTimer);
+      refreshTimer=setInterval(loadData,REFRESH_INTERVAL);
+    }
+
+    // ── INIT ──
+    onChainChange('solana');
+    onStorageChange('arweave');
+    loadData();
+    startRefresh();
+  </script>
+</body>
+</html>
