@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sources — April Gate</title>
+<meta name="description" content="Primary sources and references cited by April Gate, the cryptographic cold chain attestation protocol.">
+<style>
+  :root {
+    --bg: #0A0A0A;
+    --bg-card: #111111;
+    --text: #F5F5F5;
+    --text-muted: #9AA0A6;
+    --text-dim: #6B7280;
+    --accent: #14F195;
+    --border: #1F1F1F;
+    --border-hover: #2A2A2A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .accent-bar { height: 4px; background: var(--accent); width: 100%; }
+  header {
+    padding: 48px 32px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .wordmark {
+    font-family: "Arial Black", Helvetica, sans-serif;
+    font-weight: 900;
+    font-size: 16px;
+    letter-spacing: 6px;
+    color: var(--text);
+    text-decoration: none;
+    display: inline-block;
+  }
+  .wordmark-underline {
+    width: 40px; height: 2px; background: var(--accent);
+    margin-top: 6px;
+  }
+  main {
+    flex: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    width: 100%;
+  }
+  h1 {
+    font-family: "Arial Black", Helvetica, sans-serif;
+    font-weight: 900;
+    font-size: clamp(48px, 8vw, 88px);
+    line-height: 1.0;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+  .lede {
+    color: var(--text-muted);
+    font-size: 18px;
+    max-width: 720px;
+    margin-bottom: 16px;
+  }
+  .meta {
+    color: var(--text-dim);
+    font-size: 14px;
+    font-family: Consolas, Menlo, monospace;
+    margin-bottom: 64px;
+  }
+  section {
+    margin-bottom: 56px;
+  }
+  h2 {
+    font-family: "Arial Black", Helvetica, sans-serif;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .claim {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 24px;
+    max-width: 820px;
+    line-height: 1.4;
+  }
+  .citation {
+    border-left: 2px solid var(--border);
+    padding: 16px 0 16px 24px;
+    margin-bottom: 16px;
+    transition: border-color 0.15s ease;
+  }
+  .citation:hover { border-left-color: var(--accent); }
+  .citation-title {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 17px;
+    margin-bottom: 4px;
+  }
+  .citation-desc {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  .citation a {
+    color: var(--accent);
+    font-family: Consolas, Menlo, monospace;
+    font-size: 14px;
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .citation a:hover { text-decoration: underline; }
+  .caveat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .caveat strong { color: var(--text); }
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px;
+    max-width: 1100px;
+    margin: 64px auto 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  footer .left { color: var(--text-dim); font-size: 14px; }
+  footer .right a {
+    color: var(--accent);
+    font-family: Consolas, Menlo, monospace;
+    font-size: 14px;
+    text-decoration: none;
+  }
+  footer .right a:hover { text-decoration: underline; }
+  @media (max-width: 600px) {
+    header, main, footer { padding: 24px 20px; }
+    .meta { margin-bottom: 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+
+<header>
+  <a href="/" class="wordmark">APRIL // GATE</a>
+  <div class="wordmark-underline"></div>
+</header>
+
+<main>
+  <h1>Sources</h1>
+  <p class="lede">Primary references for every figure, claim, and statistic April Gate cites in its product, pitch materials, and public communications.</p>
+  <p class="meta">Last updated: May 2026</p>
+
+  <section>
+    <h2>01 · The $35 Billion Loss</h2>
+    <p class="claim">"The biopharma industry loses approximately $35 billion annually as a result of failures in temperature-controlled logistics."</p>
+
+    <div class="citation">
+      <div class="citation-title">IQVIA Institute for Human Data Science — 2019 Biopharma Cold Chain Logistics Survey</div>
+      <div class="citation-desc">Published by Pelican BioThermal. Includes lost product, clinical trial loss and replacement costs, wasted logistics costs, and root-cause analysis costs.</div>
+      <a href="https://cdn2.hubspot.net/hubfs/4107558/general%20content/PEL1046_SurveyReport_v4a.pdf" target="_blank" rel="noopener">cdn2.hubspot.net/.../PEL1046_SurveyReport_v4a.pdf</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">Air Cargo News — July 2019</div>
+      <div class="citation-desc">"Failures in temperature-controlled logistics cost biopharma industry billions." Trade-press coverage of the IQVIA figure.</div>
+      <a href="https://www.aircargonews.net/sectors/pharma-logistics/failures-in-temperature-controlled-logistics-cost-biopharma-industry-billions/" target="_blank" rel="noopener">aircargonews.net/sectors/pharma-logistics/failures-in-temperature-controlled-logistics</a>
+    </div>
+
+    <div class="caveat">
+      <strong>Note on scope.</strong> The $35B figure is biopharma-specific, not all cold chain. Other industry sources give a range of $20B–$35B.
+    </div>
+  </section>
+
+  <section>
+    <h2>02 · Vaccine Wastage</h2>
+    <p class="claim">"More than 50% of vaccines may be wasted globally every year, in part due to temperature control, logistics, and shipment-related issues."</p>
+
+    <div class="citation">
+      <div class="citation-title">World Health Organization</div>
+      <div class="citation-desc">Original WHO publication (2005), reiterated across subsequent Effective Vaccine Management (EVM) materials and WHO immunization supply chain documentation.</div>
+      <a href="https://www.who.int/teams/immunization-vaccines-and-biologicals/essential-programme-on-immunization/supply-chain" target="_blank" rel="noopener">who.int/teams/immunization-vaccines-and-biologicals/.../supply-chain</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">UN Environment Programme — June 2020</div>
+      <div class="citation-desc">"Why optimized cold-chains could save a billion COVID vaccines." Quantifies the WHO figure at COVID-rollout scale.</div>
+      <a href="https://www.unep.org/news-and-stories/story/why-optimized-cold-chains-could-save-billion-covid-vaccines" target="_blank" rel="noopener">unep.org/news-and-stories/story/why-optimized-cold-chains-could-save-billion-covid-vaccines</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">World Economic Forum — 2018</div>
+      <div class="citation-desc">"Over half of vaccines are wasted globally for these simple reasons."</div>
+      <a href="https://www.weforum.org/stories/2018/07/the-biggest-hurdle-to-universal-vaccination-might-just-be-a-fridge/" target="_blank" rel="noopener">weforum.org/stories/2018/07/the-biggest-hurdle-to-universal-vaccination-might-just-be-a-fridge</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>03 · Temperature Excursion Rates</h2>
+    <p class="claim">"Approximately 12% of pharmaceutical shipments still experience temperature excursions, with up to 50% of vaccines compromised each year."</p>
+
+    <div class="citation">
+      <div class="citation-title">The Medicine Maker — April 2026</div>
+      <div class="citation-desc">"A Reliable Cold Chain is a Health Equity Issue." Recent industry analysis of excursion rates and downstream consequences.</div>
+      <a href="https://themedicinemaker.com/issues/2026/articles/april/a-reliable-cold-chain-is-a-health-equity-issue/" target="_blank" rel="noopener">themedicinemaker.com/issues/2026/articles/april/a-reliable-cold-chain-is-a-health-equity-issue</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>04 · Market Size &amp; Growth</h2>
+    <p class="claim">"The global pharma cold chain logistics market is projected at $27.7B by 2028 (5.26% CAGR); the broader cold chain market grows from $436B (2025) to $1.36T by 2034."</p>
+
+    <div class="citation">
+      <div class="citation-title">Pharmaceutical Commerce — March 2026</div>
+      <div class="citation-desc">"The Pharma Cold Chain: More Visible, More Sustainable—and Colder." Citing IQVIA Global Use of Medicines 2024, Visiongain, ResearchAndMarkets, Emergen Research.</div>
+      <a href="https://www.pharmaceuticalcommerce.com/view/the-pharma-cold-chain-more-visible-more-sustainable-and-colder" target="_blank" rel="noopener">pharmaceuticalcommerce.com/view/the-pharma-cold-chain-more-visible-more-sustainable-and-colder</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">CCP Logistics — March 2026</div>
+      <div class="citation-desc">"Cold Chain Logistics in 2026: Precision, Protection and Performance." Broader cold chain market forecast through 2034.</div>
+      <a href="https://www.ccplogistics.com/cold-chain-logistics-in-2026-precision-protection-and-performance" target="_blank" rel="noopener">ccplogistics.com/cold-chain-logistics-in-2026-precision-protection-and-performance</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>05 · Dispute Resolution &amp; Claims Process</h2>
+    <p class="claim">"Temperature excursion claims today are adjudicated through manual data-logger downloads and document review. Carriers publish multi-week SLAs for resolution; full insurance and legal disputes routinely extend further."</p>
+
+    <div class="citation">
+      <div class="citation-title">LATAM Cargo — Pharma Service SLAs</div>
+      <div class="citation-desc">Published resolution timeline: 12 business days (Passive Pharma) / 18 business days (Active Pharma) for temperature excursion claim investigation.</div>
+      <a href="https://www.latamcargo.com/en/pharma" target="_blank" rel="noopener">latamcargo.com/en/pharma</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">Eupry — Pharmaceutical Air Freight Temperature Monitoring Guide</div>
+      <div class="citation-desc">On root-cause attribution gaps across multi-party handoffs: gaps in temperature records make responsibility assignment under freight contracts difficult.</div>
+      <a href="https://eupry.com/temperature-monitoring/air-cargo-monitoring/" target="_blank" rel="noopener">eupry.com/temperature-monitoring/air-cargo-monitoring</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">Marlin Blue — April 2025</div>
+      <div class="citation-desc">"What to do when facing a cargo damage claim." On legal advisor involvement in complex, high-value, or disputed claims.</div>
+      <a href="https://marlinblue.com/cargo-damage-claim-guide/" target="_blank" rel="noopener">marlinblue.com/cargo-damage-claim-guide</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>06 · Regulatory Framework</h2>
+    <p class="claim">"April Gate's attestation outputs are designed to be compatible with the documentation and traceability requirements of EU GDP, US DSCSA, and IATA TCR."</p>
+
+    <div class="citation">
+      <div class="citation-title">European Commission — EU Good Distribution Practice</div>
+      <div class="citation-desc">Guidelines on Good Distribution Practice of medicinal products for human use (2013/C 343/01).</div>
+      <a href="https://health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en" target="_blank" rel="noopener">health.ec.europa.eu/medicinal-products/eudralex/eudralex-volume-4_en</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">US Food and Drug Administration — Drug Supply Chain Security Act</div>
+      <div class="citation-desc">DSCSA traceability and documentation requirements for the pharmaceutical supply chain.</div>
+      <a href="https://www.fda.gov/drugs/drug-supply-chain-integrity/drug-supply-chain-security-act-dscsa" target="_blank" rel="noopener">fda.gov/drugs/drug-supply-chain-integrity/drug-supply-chain-security-act-dscsa</a>
+    </div>
+
+    <div class="citation">
+      <div class="citation-title">IATA — Temperature Control Regulations</div>
+      <div class="citation-desc">Best practices for air freight of temperature-sensitive pharmaceuticals.</div>
+      <a href="https://www.iata.org/en/publications/store/temperature-control-regulations/" target="_blank" rel="noopener">iata.org/en/publications/store/temperature-control-regulations</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="left">© April Gate. Building the bridge to the industries blockchain hasn't reached yet.</div>
+  <div class="right"><a href="/">← aprilgatehq.com</a></div>
+</footer>
+
+</body>
+</html>
