@@ -621,47 +621,53 @@
 
     .contact-strip-btn:hover { background: var(--accent3); }
 
-    /* Footer */
+    /* ── FOOTER ── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 1.5rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--surface);
+      padding: 2rem 0;
       position: relative;
       z-index: 1;
     }
 
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     .footer-logo {
       font-family: var(--mono);
-      font-size: 0.72rem;
-      color: var(--ink3);
+      font-size: 0.8rem;
+      color: var(--text-dim);
       letter-spacing: 0.15em;
     }
 
-    .footer-links {
-      display: flex;
-      gap: 1.5rem;
-    }
-
-    .footer-link {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      color: var(--ink3);
-      text-decoration: none;
-      letter-spacing: 0.1em;
-      transition: color 0.2s;
-    }
-
-    .footer-link:hover { color: var(--accent); }
-
     .footer-copy {
       font-family: var(--mono);
-      font-size: 0.62rem;
-      color: var(--ink3);
-      letter-spacing: 0.08em;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
     }
+
+    .footer-solana {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .solana-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+
+
 
     /* Loading spinner */
     .spinner {
@@ -934,17 +940,24 @@
     </a>
   </div>
 
+
   <!-- FOOTER -->
   <footer>
-    <div class="footer-logo">APRIL // GATE</div>
-    <div class="footer-links">
-      <a href="index.html" class="footer-link">Home</a>
-      <a href="dashboard.html" class="footer-link">Dashboard</a>
-      <a href="how-it-works.html" class="footer-link">Legal &amp; Compliance</a>
-      <a href="whitepaper.pdf" target="_blank" class="footer-link" style="color:var(--accent);">Whitepaper</a>
-      <a href="mailto:irina@aprilgatehq.com" class="footer-link">Contact</a>
+    <div class="container">
+      <div class="footer-inner">
+        <div style="display:flex;gap:1.5rem;align-items:center;">
+          <a href="dashboard.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">DASHBOARD</a>
+          <a href="how-it-works.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">LEGAL &amp; COMPLIANCE</a>
+          <a href="sources.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">SOURCES &amp; REFERENCES</a>
+          <a href="whitepaper.pdf" target="_blank" style="font-family:var(--mono);font-size:0.65rem;color:var(--accent);letter-spacing:0.1em;text-decoration:none;">WHITEPAPER</a>
+          <a href="mailto:irina@aprilgatehq.com" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">CONTACT</a>
+        </div>
+        <div class="footer-solana">
+          <div class="solana-dot"></div>
+          BUILT ON SOLANA
+        </div>
+      </div>
     </div>
-    <div class="footer-copy">© 2026 April Gate · Patent Pending</div>
   </footer>
 
   <script>

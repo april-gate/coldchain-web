@@ -579,17 +579,48 @@
     /* ── FOOTER ── */
     footer {
       border-top: 1px solid var(--border);
-      padding: 2rem;
-      text-align: center;
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      color: var(--ink3);
-      letter-spacing: 0.1em;
+      padding: 2rem 0;
       position: relative;
       z-index: 1;
     }
 
-    footer a { color: var(--accent); text-decoration: none; }
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+    }
+
+    .footer-copy {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    .footer-solana {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .solana-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
 
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
@@ -1047,11 +1078,29 @@
 
   </div>
 
-  <footer>
-    © 2026 APRIL GATE · <a href="index.html">aprilgatehq.com</a> · irina@aprilgatehq.com · <a href="whitepaper.pdf" target="_blank" style="color:var(--accent);">Whitepaper</a>
-    <br style="margin-bottom:0.4rem"/>
+  <!-- PAGE-SPECIFIC LEGAL DISCLAIMER -->
+  <div style="padding:1.5rem 2rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.6rem;line-height:1.6;color:var(--text-dim);letter-spacing:0.05em;text-align:center;">
     This page is for informational purposes only and does not constitute legal advice.
     Consult qualified legal counsel for advice specific to your jurisdiction.
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div style="display:flex;gap:1.5rem;align-items:center;">
+          <a href="verify.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">VERIFY</a>
+          <a href="dashboard.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">DASHBOARD</a>
+          <a href="sources.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">SOURCES &amp; REFERENCES</a>
+          <a href="whitepaper.pdf" target="_blank" style="font-family:var(--mono);font-size:0.65rem;color:var(--accent);letter-spacing:0.1em;text-decoration:none;">WHITEPAPER</a>
+          <a href="mailto:irina@aprilgatehq.com" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">CONTACT</a>
+        </div>
+        <div class="footer-solana">
+          <div class="solana-dot"></div>
+          BUILT ON SOLANA
+        </div>
+      </div>
+    </div>
   </footer>
 
   <script>
@@ -1062,18 +1111,5 @@
       event.target.classList.add('active');
     }
   </script>
-
-
-  <!-- SITE NAV STRIP -->
-  <div style="background:#0d1117;border-top:1px solid #1e2d3d;padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;">
-    <span style="color:#00d4a8;">APRIL // GATE</span>
-    <div style="display:flex;gap:1.5rem;">
-      <a href="index.html" style="color:#556677;text-decoration:none;">HOME</a>
-      <a href="verify.html" style="color:#556677;text-decoration:none;">VERIFY SHIPMENT</a>
-      <a href="dashboard.html" style="color:#556677;text-decoration:none;">DASHBOARD</a>
-      <a href="mailto:irina@aprilgatehq.com" style="color:#556677;text-decoration:none;">CONTACT</a>
-    </div>
-    <span style="color:#556677;">© 2026 APRIL GATE · PATENT PENDING</span>
-  </div>
 </body>
 </html>
