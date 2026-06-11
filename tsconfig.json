@@ -11,5 +11,7 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src"]
+  "include": [
+    "coldchain-web-dropin/src"
+  ]
 }

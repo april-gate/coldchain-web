@@ -1,0 +1,1243 @@
+{
+  "address": "APRBVwwJJeStD5wShyg4HivneDYj4TCPYKtSFX5F4jez",
+  "metadata": {
+    "name": "device_registry",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "assign_device",
+      "docs": [
+        "Assign a device to a shipment. Creates an immutable DeviceAssignment",
+        "PDA, preserving the device's full assignment history. Rejected if the",
+        "shipment is closed."
+      ],
+      "discriminator": [
+        103,
+        244,
+        145,
+        174,
+        104,
+        221,
+        37,
+        156
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true
+        },
+        {
+          "name": "shipment"
+        },
+        {
+          "name": "assignment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  115,
+                  115,
+                  105,
+                  103,
+                  110,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "device"
+              },
+              {
+                "kind": "account",
+                "path": "device.assignment_count",
+                "account": "DeviceRegistry"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "device"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "attest_shipment_verification",
+      "docs": [
+        "Record an off-chain verification attestation against a closed shipment.",
+        "Additive and multi-party: any signer may attest, and a shipment may",
+        "accrue several attestations from distinct verifiers (up to",
+        "`Shipment::MAX_ATTESTATIONS`). The attestation pins to the shipment's",
+        "`chain_hash` at verification time and is stored inline on the Shipment",
+        "PDA so verification status is readable in a single account fetch."
+      ],
+      "discriminator": [
+        86,
+        185,
+        228,
+        180,
+        74,
+        118,
+        245,
+        193
+      ],
+      "accounts": [
+        {
+          "name": "shipment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  105,
+                  112,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "shipment.authority",
+                "account": "Shipment"
+              },
+              {
+                "kind": "account",
+                "path": "shipment.nonce",
+                "account": "Shipment"
+              }
+            ]
+          }
+        },
+        {
+          "name": "verifier",
+          "docs": [
+            "The verifier — anyone may attest. Authorization at the attestation-trust",
+            "level is an off-chain concern (downstream consumers decide which",
+            "verifier pubkeys they trust)."
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "instructions_sysvar",
+          "docs": [
+            "signature verification of the attestation payload (see handler TODO).",
+            "Constrained by address so the layout is stable for the hardened path."
+          ],
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "chain_hash_at_verification",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "outcome",
+          "type": {
+            "defined": {
+              "name": "VerificationOutcome"
+            }
+          }
+        },
+        {
+          "name": "attestation_signature",
+          "type": {
+            "array": [
+              "u8",
+              64
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "close_shipment",
+      "docs": [
+        "Dissolve the shipment subnet. Operator-only, one-way. After close, no",
+        "new dispatches or assignments are accepted."
+      ],
+      "discriminator": [
+        158,
+        42,
+        98,
+        218,
+        252,
+        112,
+        137,
+        44
+      ],
+      "accounts": [
+        {
+          "name": "shipment",
+          "docs": [
+            "Operator-only, one-way. The `has_one = authority` constraint ensures",
+            "only the wallet that founded the shipment can dissolve it."
+          ],
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "shipment"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_shipment",
+      "docs": [
+        "Found a shipment subnet. `nonce` is a 32-byte unguessable identifier;",
+        "`manifest_commitment` binds the off-chain shipment manifest."
+      ],
+      "discriminator": [
+        67,
+        64,
+        17,
+        114,
+        30,
+        143,
+        249,
+        247
+      ],
+      "accounts": [
+        {
+          "name": "shipment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  105,
+                  112,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "authority"
+              },
+              {
+                "kind": "arg",
+                "path": "nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "manifest_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "end_assignment",
+      "docs": [
+        "Mark the device's current assignment as ended. Permitted regardless of",
+        "shipment closed state, so devices can be freed for reuse."
+      ],
+      "discriminator": [
+        27,
+        185,
+        184,
+        36,
+        191,
+        240,
+        205,
+        176
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true
+        },
+        {
+          "name": "assignment",
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "device"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_device",
+      "docs": [
+        "Register a new device. Creates an immutable PDA keyed by device_id."
+      ],
+      "discriminator": [
+        210,
+        151,
+        56,
+        68,
+        22,
+        158,
+        90,
+        193
+      ],
+      "accounts": [
+        {
+          "name": "device",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  118,
+                  105,
+                  99,
+                  101
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "device_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "device_id",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "pubkey",
+          "type": {
+            "array": [
+              "u8",
+              33
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "submit_proof",
+      "docs": [
+        "Submit a consensus dispatch commitment against an active assignment.",
+        "The submitter must be the device's recorded hardware-rooted authority.",
+        "No account is created; the Shipment PDA is updated and the dispatch is",
+        "emitted to the transaction log."
+      ],
+      "discriminator": [
+        54,
+        241,
+        46,
+        84,
+        4,
+        212,
+        46,
+        94
+      ],
+      "accounts": [
+        {
+          "name": "assignment",
+          "writable": true
+        },
+        {
+          "name": "shipment",
+          "writable": true
+        },
+        {
+          "name": "device",
+          "docs": [
+            "The registered device this dispatch is submitted under. Its recorded",
+            "authority must be the transaction signer (hardware-rooted identity)."
+          ]
+        },
+        {
+          "name": "submitter",
+          "docs": [
+            "Must be the device's recorded authority key. This is the",
+            "hardware-rooted identity check: only the registered device's owner",
+            "can submit dispatches under its assignment."
+          ],
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "DeviceAssignment",
+      "discriminator": [
+        15,
+        80,
+        106,
+        22,
+        229,
+        11,
+        63,
+        194
+      ]
+    },
+    {
+      "name": "DeviceRegistry",
+      "discriminator": [
+        103,
+        245,
+        70,
+        187,
+        154,
+        60,
+        208,
+        216
+      ]
+    },
+    {
+      "name": "Shipment",
+      "discriminator": [
+        3,
+        65,
+        195,
+        72,
+        154,
+        63,
+        211,
+        213
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "AssignmentEnded",
+      "discriminator": [
+        146,
+        126,
+        180,
+        13,
+        104,
+        28,
+        124,
+        193
+      ]
+    },
+    {
+      "name": "DeviceAssigned",
+      "discriminator": [
+        80,
+        78,
+        36,
+        227,
+        26,
+        127,
+        178,
+        77
+      ]
+    },
+    {
+      "name": "DeviceRegistered",
+      "discriminator": [
+        221,
+        90,
+        2,
+        153,
+        72,
+        98,
+        71,
+        181
+      ]
+    },
+    {
+      "name": "ProofSubmitted",
+      "discriminator": [
+        160,
+        51,
+        85,
+        70,
+        249,
+        89,
+        5,
+        139
+      ]
+    },
+    {
+      "name": "ShipmentAttested",
+      "discriminator": [
+        143,
+        133,
+        230,
+        16,
+        36,
+        69,
+        153,
+        61
+      ]
+    },
+    {
+      "name": "ShipmentClosed",
+      "discriminator": [
+        162,
+        35,
+        62,
+        42,
+        137,
+        213,
+        34,
+        218
+      ]
+    },
+    {
+      "name": "ShipmentCreated",
+      "discriminator": [
+        208,
+        238,
+        202,
+        187,
+        110,
+        165,
+        208,
+        89
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "DeviceAlreadyAssigned",
+      "msg": "Device is already assigned to a shipment"
+    },
+    {
+      "code": 6001,
+      "name": "DeviceNotAssigned",
+      "msg": "Device is not currently assigned"
+    },
+    {
+      "code": 6002,
+      "name": "AssignmentAlreadyEnded",
+      "msg": "Assignment has already been ended"
+    },
+    {
+      "code": 6003,
+      "name": "AssignmentMismatch",
+      "msg": "Assignment account does not match device's current assignment"
+    },
+    {
+      "code": 6004,
+      "name": "ShipmentClosed",
+      "msg": "Shipment is closed and cannot accept new operations"
+    },
+    {
+      "code": 6005,
+      "name": "UnauthorizedSubmitter",
+      "msg": "Submitter is not the authority of the device referenced by the assignment"
+    },
+    {
+      "code": 6006,
+      "name": "AssignmentDeviceMismatch",
+      "msg": "Assignment's device field does not match the provided device account"
+    },
+    {
+      "code": 6007,
+      "name": "AssignmentEnded",
+      "msg": "Assignment has been ended; cannot submit proofs against it"
+    },
+    {
+      "code": 6008,
+      "name": "Unauthorized",
+      "msg": "Unauthorized: signer does not match the required authority"
+    },
+    {
+      "code": 6009,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6010,
+      "name": "ShipmentNotClosed",
+      "msg": "Shipment must be closed before it can be attested"
+    },
+    {
+      "code": 6011,
+      "name": "AttestationCapacityExceeded",
+      "msg": "Shipment has reached its maximum attestation capacity"
+    }
+  ],
+  "types": [
+    {
+      "name": "AssignmentEnded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "device",
+            "type": "pubkey"
+          },
+          {
+            "name": "shipment",
+            "type": "pubkey"
+          },
+          {
+            "name": "assignment",
+            "type": "pubkey"
+          },
+          {
+            "name": "ended_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceAssigned",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "device",
+            "type": "pubkey"
+          },
+          {
+            "name": "shipment",
+            "type": "pubkey"
+          },
+          {
+            "name": "assignment",
+            "type": "pubkey"
+          },
+          {
+            "name": "sequence",
+            "type": "u32"
+          },
+          {
+            "name": "assigned_at",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceAssignment",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "device",
+            "docs": [
+              "Device that was assigned."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "shipment",
+            "docs": [
+              "Shipment it was assigned to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "sequence",
+            "docs": [
+              "Sequence number (0 = first assignment for this device)."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "Authority that created the assignment."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "assigned_at",
+            "docs": [
+              "Unix timestamp of assignment."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "ended_at",
+            "docs": [
+              "Unix timestamp of unassignment. 0 if still active."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "proof_count",
+            "docs": [
+              "Number of proofs submitted against this assignment. Maintained for",
+              "off-chain per-assignment accounting; not used as a PDA seed."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceRegistered",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "device",
+            "type": "pubkey"
+          },
+          {
+            "name": "device_id",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeviceRegistry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Owner authorized to assign this device and submit proofs."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "device_id",
+            "docs": [
+              "Hardware-derived device ID (ATECC608 serial in bytes [0..9])."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "pubkey",
+            "docs": [
+              "ATECC608 P-256 public key, compressed SEC1 format.",
+              "Layout: prefix byte (0x02 or 0x03) + 32-byte X coordinate."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                33
+              ]
+            }
+          },
+          {
+            "name": "assignment_count",
+            "docs": [
+              "Total assignments this device has had. Also serves as next sequence."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "current_assignment",
+            "docs": [
+              "Current active assignment PDA, or Pubkey::default() if unassigned."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump for re-derivation."
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProofSubmitted",
+      "docs": [
+        "Emitted by `submit_proof`. The per-round audit record — a subnet member's",
+        "consensus dispatch — lives in the transaction log permanently. Solana",
+        "blockTime (via getTransaction) is the authoritative chain-witnessed",
+        "timestamp; not duplicated here."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "shipment",
+            "type": "pubkey"
+          },
+          {
+            "name": "assignment",
+            "type": "pubkey"
+          },
+          {
+            "name": "device",
+            "type": "pubkey"
+          },
+          {
+            "name": "sequence",
+            "docs": [
+              "Chain-assigned sequence within this shipment. 0 for the first proof."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "commitment",
+            "docs": [
+              "32-byte hash binding the off-chain consensus dispatch content."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "chain_hash_after",
+            "docs": [
+              "The shipment's integrity hash chain value AFTER folding in this proof.",
+              "Lets off-chain consumers verify chain progression from event data alone,",
+              "without a separate account fetch."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shipment",
+      "docs": [
+        "A Shipment is the on-chain bracketing of an EQS (Ephemeral Quorum Subnet)",
+        "— the permissioned cluster of sensors monitoring one cargo shipment.",
+        "",
+        "The chain records when the subnet formed (create_shipment), the stream of",
+        "consensus dispatches it produced (submit_proof), and when it was dissolved",
+        "(close_shipment). The chain does not arbitrate the subnet's internal",
+        "consensus protocol — that is the subnet's own business, verifiable by",
+        "parties holding the operator's off-chain manifest."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Operator wallet that founded this shipment subnet. Authorized to",
+              "assign devices and to close the subnet. May be a per-shipment fresh",
+              "keypair (recommended) to break correlation between the operator's",
+              "real-world identity and their on-chain shipment history."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "32-byte unguessable shipment identifier chosen by the operator.",
+              "Stored opaquely so an observer who knows `authority` cannot enumerate",
+              "the operator's shipments by guessing sequential nonces."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "manifest_commitment",
+            "docs": [
+              "32-byte hash binding the off-chain shipment manifest (route,",
+              "temperature range, deadlines, lot numbers, quorum policy, expected",
+              "cluster identifiers). The manifest itself lives off-chain under",
+              "operator control; this commitment makes it tamper-evident."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "proof_count",
+            "docs": [
+              "Total consensus dispatches anchored to this shipment. Chain-assigned",
+              "sequence source; incremented on each accepted proof."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "last_commitment",
+            "docs": [
+              "32-byte commitment from the most recent dispatch. Lets an observer",
+              "read the latest anchor from a single account fetch."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "created_at",
+            "docs": [
+              "Unix timestamp captured at subnet formation (`create_shipment`). Bound",
+              "into the genesis chain hash so the exportable hash chain is unique per",
+              "shipment from byte one; also a convenience for off-chain accounting."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "chain_hash",
+            "docs": [
+              "Constant-size cryptographic hash chain committing to the full ordered",
+              "history of consensus proofs anchored to this shipment. Initialized at",
+              "creation to a domain-separated genesis hash bound to the shipment's",
+              "identity, then folded forward on every accepted proof",
+              "(`SHA256(prev_chain_hash || proof_commitment || proof_sequence)`).",
+              "Provides a constant-size, trivially-queryable on-chain integrity anchor",
+              "that lets any party verify the completeness and ordering of proofs",
+              "retrieved from the transaction log without trusting the retrieval path."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "closed",
+            "docs": [
+              "True once the operator has dissolved the subnet. One-way: cannot be",
+              "unset. When true, the program rejects new proofs and new assignments."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump for re-derivation."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "attestations",
+            "docs": [
+              "Independent off-chain verification attestations pinned to this",
+              "shipment's `chain_hash`. Additive and multi-party: any signer may",
+              "attest a closed shipment; downstream consumers choose which verifiers",
+              "to trust. Stored inline (rather than per-attestation PDAs) so the full",
+              "verification status is readable in a single `getAccountInfo` call."
+            ],
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "VerificationAttestation"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShipmentAttested",
+      "docs": [
+        "Emitted by `attest_shipment_verification`. Records that a verifier has",
+        "independently verified the shipment's proof history off-chain. Additive and",
+        "multi-party — a shipment may accrue several attestations from distinct",
+        "verifiers; downstream consumers choose which verifier(s) to trust."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "shipment",
+            "type": "pubkey"
+          },
+          {
+            "name": "verifier",
+            "type": "pubkey"
+          },
+          {
+            "name": "verified_at",
+            "type": "i64"
+          },
+          {
+            "name": "chain_hash_at_verification",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "outcome",
+            "type": {
+              "defined": {
+                "name": "VerificationOutcome"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShipmentClosed",
+      "docs": [
+        "Emitted by `close_shipment`. Marks subnet dissolution. Final proof_count",
+        "is captured here so an auditor reading just the close transaction's logs",
+        "knows the total dispatch count without also fetching the Shipment account."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "shipment",
+            "type": "pubkey"
+          },
+          {
+            "name": "proof_count",
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShipmentCreated",
+      "docs": [
+        "Emitted by `create_shipment`. Marks subnet formation."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "shipment",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "manifest_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VerificationAttestation",
+      "docs": [
+        "A single off-chain verification attestation, stored inline on `Shipment`.",
+        "",
+        "`attestation_signature` is the verifier's signature over the attestation",
+        "payload (shipment_pubkey || chain_hash_at_verification || outcome_byte ||",
+        "verified_at). It is recorded on-chain so downstream consumers can verify",
+        "provenance off-chain; see `attest_shipment_verification` for the (currently",
+        "deferred) on-chain ed25519 verification path."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "verifier",
+            "docs": [
+              "Verifier identity (the attesting signer)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "verified_at",
+            "docs": [
+              "Unix timestamp the attestation was recorded on-chain."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "chain_hash_at_verification",
+            "docs": [
+              "The `chain_hash` value the verifier observed when verifying. Pins the",
+              "attestation to a specific point in the shipment's proof history."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "outcome",
+            "docs": [
+              "The recorded verification outcome."
+            ],
+            "type": {
+              "defined": {
+                "name": "VerificationOutcome"
+              }
+            }
+          },
+          {
+            "name": "attestation_signature",
+            "docs": [
+              "Verifier signature over the attestation payload."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VerificationOutcome",
+      "docs": [
+        "Outcome a verifier records when attesting a shipment's proof history."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Passed"
+          },
+          {
+            "name": "FailedExcursion"
+          },
+          {
+            "name": "FailedQuorum"
+          },
+          {
+            "name": "FailedIntegrity"
+          },
+          {
+            "name": "Inconclusive"
+          }
+        ]
+      }
+    }
+  ]
+}

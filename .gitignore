@@ -1,5 +1,5 @@
 /tmp
-/public/assets
+/public/assets/aprilgate.js
 /out-tsc
 vcs.xml
 modules.xml
@@ -11,3 +11,5 @@ yarn-error.log*
 .pnp.js
 /.idea
 .vscode/*
+.env
+.env.*
