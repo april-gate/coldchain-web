@@ -752,35 +752,31 @@
 
       <div class="result-grid" id="resultGrid">
         <div class="result-cell">
-          <div class="result-cell-label">// Shipment ID</div>
+          <div class="result-cell-label">// Shipment (PDA)</div>
           <div class="result-cell-value" id="rShipmentId">—</div>
         </div>
         <div class="result-cell">
           <div class="result-cell-label">// Verification Result</div>
-          <div class="result-cell-value good" id="rResult">VALID</div>
+          <div class="result-cell-value good" id="rResult">—</div>
         </div>
         <div class="result-cell">
-          <div class="result-cell-label">// Temperature Range</div>
-          <div class="result-cell-value" id="rTemp">—</div>
+          <div class="result-cell-label">// Proofs On Chain</div>
+          <div class="result-cell-value" id="rProofs">—</div>
         </div>
         <div class="result-cell">
-          <div class="result-cell-label">// Specification</div>
-          <div class="result-cell-value" id="rSpec">2°C – 8°C</div>
+          <div class="result-cell-label">// Network</div>
+          <div class="result-cell-value" id="rNetwork">Solana devnet</div>
         </div>
         <div class="result-cell">
-          <div class="result-cell-label">// Sensors Agreed</div>
-          <div class="result-cell-value good" id="rSensors">—</div>
+          <div class="result-cell-label">// Chain Hash (on-chain)</div>
+          <div class="result-cell-value" id="rChainHash">—</div>
         </div>
         <div class="result-cell">
-          <div class="result-cell-label">// Tamper Events</div>
-          <div class="result-cell-value" id="rTamper">—</div>
+          <div class="result-cell-label">// Recomputed Hash</div>
+          <div class="result-cell-value" id="rRecomputed">—</div>
         </div>
         <div class="result-cell">
-          <div class="result-cell-label">// Proof Verified</div>
-          <div class="result-cell-value good" id="rProof">—</div>
-        </div>
-        <div class="result-cell">
-          <div class="result-cell-label">// Verified At</div>
+          <div class="result-cell-label">// Checked At</div>
           <div class="result-cell-value" id="rTime">—</div>
         </div>
       </div>
@@ -836,11 +832,11 @@
       <div class="step">
         <div class="step-number"><div class="step-num-inner">3</div></div>
         <div class="step-content">
-          <div class="step-title">A mathematical certificate is generated — not a log</div>
+          <div class="step-title">A tamper-evident proof chain is written on-chain — not a log</div>
           <p class="step-desc">
-            April Gate does not store thousands of individual temperature readings in a database that someone could alter. Instead, the sensors generate a single mathematical certificate — a zero-knowledge proof — that attests to what happened during the journey. This certificate proves the conditions were met without revealing any confidential operational details.
+            April Gate does not store thousands of individual temperature readings in a database that someone could alter. Instead, each proof is linked to the one before it in a hash chain anchored on Solana. Altering, removing, or reordering any entry breaks the chain — and the break is detectable by anyone. Raw operational data stays encrypted off-chain, under the customer's own key.
           </p>
-          <div class="step-plain">In court terms: a certified summary that cannot be fabricated after the fact.</div>
+          <div class="step-plain">In court terms: a tamper-evident record whose integrity anyone can re-check, independently.</div>
         </div>
       </div>
 
@@ -924,8 +920,8 @@
         <div class="faq-answer">Raw temperature data is stored off-chain, encrypted with the customer's own encryption key. April Gate does not hold the decryption key and cannot access the raw data. The on-chain record contains only the mathematical proof — which confirms conditions were met without revealing proprietary details such as exact readings, timing, or routing information.</div>
       </div>
       <div class="faq-item" onclick="toggleFaq(this)">
-        <div class="faq-question">What does "zero-knowledge proof" mean in plain terms?</div>
-        <div class="faq-answer">A zero-knowledge proof is a mathematical method that lets one party prove a statement is true without revealing any additional information. In April Gate's context: the sensors prove that temperature stayed within the required range throughout the journey — without revealing the exact temperature at any given moment, where the shipment was, or when specific readings occurred. The insurer gets confirmation. The shipper's operational data stays private.</div>
+        <div class="faq-question">How does the proof chain prove a record wasn't altered?</div>
+        <div class="faq-answer">Each proof is cryptographically linked to the one before it: every entry includes a fingerprint of the previous entry, all the way back to the shipment's origin. Change, remove, or reorder any single record and every fingerprint after it stops matching — so tampering can't be hidden. Anyone can recompute the chain from the public on-chain data and confirm it for themselves, without trusting April Gate. Raw operational details stay encrypted off-chain, under the customer's own key.</div>
       </div>
     </div>
   </div>
@@ -960,10 +956,13 @@
     </div>
   </footer>
 
-  <script>
-    const API_BASE = 'http://localhost:8080/api';
+  <script type="module">
+    import { verifyShipment } from '/assets/aprilgate.js';
 
-    // Pre-fill from URL param: aprilgatehq.com/verify?shipment=SHP-2026-0421
+    const EXPLORER = (addr) => `https://explorer.solana.com/address/${addr}?cluster=devnet`;
+    const short = (h) => (h && h.length > 20 ? `${h.slice(0, 16)}…${h.slice(-4)}` : (h || '—'));
+
+    // Pre-fill from URL param: aprilgatehq.com/verify?shipment=<PDA>
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const shipment = params.get('shipment') || params.get('tx');
@@ -981,64 +980,21 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>VERIFYING';
 
-      // Try real API first
-      let data = null;
+      let verdict;
       try {
-        const res = await fetch(`${API_BASE}/proofs/${encodeURIComponent(input)}`, {
-          signal: AbortSignal.timeout(4000)
-        });
-        if (res.ok) data = await res.json();
-      } catch {}
-
-      // Fall back to mock for demo
-      if (!data) {
-        data = getMockResult(input);
+        verdict = await verifyShipment(input);
+      } catch (e) {
+        verdict = { status: 'ERROR', shipment: input, proofCount: 0,
+                    detail: 'Verification could not run: ' + (e?.message || e) };
       }
 
-      renderResult(input, data);
-
+      renderResult(verdict);
       btn.disabled = false;
       btn.textContent = 'VERIFY';
     }
+    window.verify = verify;
 
-    function getMockResult(input) {
-      // Simulate a tamper alert for demo purposes
-      const isTampered = input.toLowerCase().includes('bad') || input.toLowerCase().includes('fail');
-      if (isTampered) {
-        return {
-          valid: false,
-          shipment_id: input,
-          temp_min: 4.1,
-          temp_max: 12.7,
-          spec_min: 2.0,
-          spec_max: 8.0,
-          sensors_agreed: 3,
-          sensors_total: 4,
-          tamper_events: 1,
-          gap_events: 1,
-          tx_hash: '3mKxRp7NwQaLvZtYuBfGhoCjEiDsAnXp2rMo8VkWe4nL',
-          verified_at: Date.now() - 86400000,
-          in_spec: false,
-        };
-      }
-      return {
-        valid: true,
-        shipment_id: input,
-        temp_min: 2.1,
-        temp_max: 7.8,
-        spec_min: 2.0,
-        spec_max: 8.0,
-        sensors_agreed: 4,
-        sensors_total: 4,
-        tamper_events: 0,
-        gap_events: 2,
-        tx_hash: '5KqPmN8xR7vYeLp2dQwJkTsAoCuBfGhiXZ3rMn4E9mVo',
-        verified_at: Date.now() - 3600000,
-        in_spec: true,
-      };
-    }
-
-    function renderResult(input, data) {
+    function renderResult(v) {
       const result = document.getElementById('verifyResult');
       const icon   = document.getElementById('resultIcon');
       const head   = document.getElementById('resultHeadline');
@@ -1047,58 +1003,63 @@
 
       result.className = 'verify-result show';
 
-      if (data.valid && data.in_spec) {
-        icon.className  = 'result-icon valid';
-        icon.textContent = '✓';
-        head.className  = 'result-headline valid';
-        head.textContent = 'Shipment Conditions Verified';
-        sub.textContent  = 'All sensors in agreement · Temperature within specification · No tampering detected';
-        plain.innerHTML  = '<strong>In plain English:</strong> The sensors aboard this shipment independently measured and agreed on temperature conditions throughout transit. A mathematical certificate of that agreement is recorded permanently on the Solana blockchain. This certificate cannot be altered, backdated, or disputed.';
-      } else if (!data.in_spec) {
-        icon.className  = 'result-icon warn';
-        icon.textContent = '!';
-        head.className  = 'result-headline warn';
-        head.textContent = 'Temperature Excursion Detected';
-        sub.textContent  = 'Conditions exceeded specification during transit · See blockchain record for details';
-        plain.innerHTML  = '<strong>In plain English:</strong> The sensors detected that temperature exceeded the required range at some point during transit. This event is recorded permanently and cannot be disputed or removed from the record.';
-      } else {
-        icon.className  = 'result-icon invalid';
-        icon.textContent = '✗';
-        head.className  = 'result-headline invalid';
-        head.textContent = 'Verification Failed';
-        sub.textContent  = 'Tamper event detected · Sensor consensus broken · See blockchain record';
-        plain.innerHTML  = '<strong>In plain English:</strong> The system detected that one or more sensors were interfered with during transit. The remaining sensors recorded this event permanently. The record cannot be altered.';
-      }
+      const M = {
+        VALID: {
+          cls: 'valid', ic: '✓', head: 'Record Verified',
+          sub: `Authentic and unbroken · ${v.proofCount} proof(s) anchored on Solana`,
+          plain: 'The full proof history for this shipment was replayed from its origin and matches the record the program stored on-chain. Nothing has been altered, reordered, or removed. Anyone can re-run this check independently — the data is public on Solana.'
+        },
+        TAMPERED: {
+          cls: 'invalid', ic: '✗', head: 'Record Does Not Verify',
+          sub: 'On-chain chain hash does not match a clean replay of the proof history',
+          plain: 'The proof history on-chain does not match a clean replay from origin. This record may have been altered, reordered, or is incomplete. Treat it as unverified.'
+        },
+        NOT_FOUND: {
+          cls: 'warn', ic: '!', head: 'No Record Found',
+          sub: 'No shipment exists at this address on-chain',
+          plain: 'No shipment record was found at this address. Double-check the shipment identifier and the network.'
+        },
+        ERROR: {
+          cls: 'warn', ic: '!', head: 'Could Not Verify',
+          sub: v.detail || 'Verification could not complete',
+          plain: 'The verifier could not complete the check — usually a malformed address or a network issue, not a tamper result. Try again.'
+        }
+      };
+      const m = M[v.status] || M.ERROR;
 
-      document.getElementById('rShipmentId').textContent = data.shipment_id || input;
-      document.getElementById('rResult').textContent     = data.valid && data.in_spec ? 'VALID' : 'INVALID';
-      document.getElementById('rResult').className       = `result-cell-value ${data.valid && data.in_spec ? 'good' : 'bad'}`;
-      document.getElementById('rTemp').textContent       = `${data.temp_min?.toFixed(1)}°C – ${data.temp_max?.toFixed(1)}°C`;
-      document.getElementById('rSpec').textContent       = `${data.spec_min}°C – ${data.spec_max}°C`;
-      document.getElementById('rSensors').textContent    = `${data.sensors_agreed} of ${data.sensors_total}`;
-      document.getElementById('rSensors').className      = `result-cell-value ${data.sensors_agreed === data.sensors_total ? 'good' : 'bad'}`;
-      document.getElementById('rTamper').textContent     = data.tamper_events === 0 ? 'None detected' : `${data.tamper_events} event(s)`;
-      document.getElementById('rTamper').className       = `result-cell-value ${data.tamper_events === 0 ? 'good' : 'bad'}`;
-      document.getElementById('rProof').textContent      = data.valid ? 'Mathematically valid' : 'Invalid';
-      document.getElementById('rProof').className        = `result-cell-value ${data.valid ? 'good' : 'bad'}`;
-      document.getElementById('rTime').textContent       = new Date(data.verified_at).toLocaleString();
+      icon.className = 'result-icon ' + m.cls;
+      icon.textContent = m.ic;
+      head.className = 'result-headline ' + m.cls;
+      head.textContent = m.head;
+      sub.textContent = m.sub;
+      plain.innerHTML = '<strong>In plain English:</strong> ' + m.plain;
 
-      const hash = data.tx_hash || '—';
-      document.getElementById('rTxHash').textContent = hash;
+      const good = v.status === 'VALID';
+      document.getElementById('rShipmentId').textContent = short(v.shipment);
+      const rRes = document.getElementById('rResult');
+      rRes.textContent = v.status;
+      rRes.className = 'result-cell-value ' + (good ? 'good' : 'bad');
+      document.getElementById('rProofs').textContent = (v.proofCount ?? '—');
+      document.getElementById('rChainHash').textContent = short(v.onChainChainHash);
+      document.getElementById('rRecomputed').textContent = short(v.recomputedChainHash);
+      document.getElementById('rTime').textContent = new Date().toLocaleString();
+
+      const hashEl = document.getElementById('rTxHash');
       const link = document.getElementById('rTxLink');
-      if (data.tx_hash) {
-        link.href = `https://explorer.solana.com/tx/${data.tx_hash}?cluster=devnet`;
+      if (v.shipment && v.status !== 'ERROR') {
+        hashEl.textContent = short(v.onChainChainHash) !== '—' ? short(v.onChainChainHash) : short(v.shipment);
+        link.href = EXPLORER(v.shipment);
         link.style.display = 'inline';
       } else {
+        hashEl.textContent = '—';
         link.style.display = 'none';
       }
 
       result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function toggleFaq(el) {
-      el.classList.toggle('open');
-    }
+    function toggleFaq(el) { el.classList.toggle('open'); }
+    window.toggleFaq = toggleFaq;
   </script>
 </body>
 </html>

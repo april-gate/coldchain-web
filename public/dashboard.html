@@ -421,9 +421,9 @@
               <div class="proof-detail-sub">Expected during transit</div>
             </div>
             <div class="proof-detail-card">
-              <div class="proof-detail-label">// ZK PROOF VERIFIED</div>
+              <div class="proof-detail-label">// PROOF CHAIN VERIFIED</div>
               <div class="proof-detail-value accent" id="pubZK">✓</div>
-              <div class="proof-detail-sub">Mathematically proven</div>
+              <div class="proof-detail-sub">Chain intact on-chain</div>
             </div>
           </div>
 
@@ -652,9 +652,9 @@
       proof:{tx_hash:'5KqPmN8xR7vYeLp2dQwJkTsAoCuBfGhiXZ3rMn4E9mVo',valid:true,submitted_at:Date.now()-120000},
       events:[
         {time:Date.now()-30000, type:'tamper',  msg:'NODE-004 temperature excursion detected: 9.1°C'},
-        {time:Date.now()-120000,type:'proof',   msg:'ZK consensus proof submitted · on-chain verified'},
+        {time:Date.now()-120000,type:'proof',   msg:'Proof-chain entry submitted · on-chain verified'},
         {time:Date.now()-300000,type:'gap',     msg:'Connectivity gap — 4min 12sec — readings buffered locally'},
-        {time:Date.now()-600000,type:'proof',   msg:'ZK consensus proof submitted · on-chain verified'},
+        {time:Date.now()-600000,type:'proof',   msg:'Proof-chain entry submitted · on-chain verified'},
         {time:Date.now()-900000,type:'register',msg:'NODE-004 registered: pubkey 04a3b2c1...'},
       ]
     };
