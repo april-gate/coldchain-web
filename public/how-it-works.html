@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme-default="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,17 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Share+Tech+Mono&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg:       #f8f6f1;
-      --bg2:      #f0ede4;
-      --surface:  #ffffff;
-      --border:   #ddd8cc;
-      --ink:      #1a1814;
-      --ink2:     #4a4540;
-      --ink3:     #7a746c;
-      --accent:   #00614a;
-      --accent2:  #c8860a;
-      --accent3:  #1a3a6b;
-      --danger:   #8b1a1a;
       --serif:    'Playfair Display', Georgia, serif;
       --mono:     'Share Tech Mono', monospace;
       --sans:     'Lato', sans-serif;
@@ -49,7 +38,7 @@
     nav {
       position: sticky;
       top: 0;
-      background: rgba(248,246,241,0.95);
+      background: rgba(7,16,25,0.95);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
       padding: 1rem 2rem;
@@ -163,7 +152,7 @@
 
     .tab-btn.active {
       background: var(--ink);
-      color: #f8f6f1;
+      color: var(--bg);
     }
 
     .tab-btn:hover:not(.active) {
@@ -402,7 +391,7 @@
       font-size: 0.65rem;
       color: var(--accent3);
       letter-spacing: 0.15em;
-      border: 1px solid rgba(26,58,107,0.2);
+      border: 1px solid rgba(110,168,255,0.2);
       padding: 0.2rem 0.5rem;
       white-space: nowrap;
     }
@@ -428,8 +417,8 @@
       color: var(--accent);
       font-weight: 700;
       padding: 0.4rem 0.75rem;
-      background: rgba(0,97,74,0.06);
-      border: 1px solid rgba(0,97,74,0.15);
+      background: rgba(79,214,255,0.06);
+      border: 1px solid rgba(79,214,255,0.15);
       display: inline-block;
       margin-bottom: 0.75rem;
     }
@@ -442,7 +431,7 @@
       font-size: 0.75rem;
       color: var(--accent3);
       text-decoration: none;
-      border-bottom: 1px solid rgba(26,58,107,0.3);
+      border-bottom: 1px solid rgba(110,168,255,0.3);
       padding-bottom: 0.1rem;
       transition: all 0.2s;
     }
@@ -546,7 +535,7 @@
 
     .cta-block p {
       font-size: 0.95rem;
-      color: rgba(248,246,241,0.65);
+      color: rgba(7,16,25,0.65);
       line-height: 1.6;
     }
 
@@ -567,7 +556,7 @@
       transition: all 0.2s;
     }
 
-    .cta-btn:hover { background: #007a5e; }
+    .cta-btn:hover { background: var(--accent-2); }
 
     /* ── DIVIDER ── */
     .divider {
@@ -631,7 +620,13 @@
       .comparison-header div:not(:first-child),
       .comparison-row div:not(:first-child) { display: none; }
     }
+  
+
+  
+
   </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
 </head>
 <body>
 
@@ -641,10 +636,13 @@
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
       <li><a href="verify.html">Verify</a></li>
+       <li><a href="team.html">Team</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
       <li><a href="whitepaper.pdf" target="_blank" style="color:var(--accent);">Whitepaper</a></li>
       <li><a href="mailto:irina@aprilgatehq.com">Contact</a></li>
+      <li><button class="theme-toggle" type="button" onclick="toggleTheme()"></button></li>
     </ul>
+      <div class="thermo thermo--attached" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
   </nav>
 
   <!-- HERO -->

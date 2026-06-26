@@ -1,0 +1,81 @@
+/* ============================================================================
+   April Gate — theme.css   (single source of truth for color + theming)
+   ----------------------------------------------------------------------------
+   Two themes, one naming scheme. Everything on the site reads these tokens.
+   A future designer changes the look here, not in each page.
+
+     :root                 -> DARK ("Glacial Dark", operator / technical)  = default
+     [data-theme="light"]  -> LIGHT ("Soft Slate-Blue", public / legal)
+     toggling to "dark" simply removes the light overrides (falls back to :root)
+
+   Per-page default theme is set on <html data-theme-default="light|dark">;
+   theme.js applies it (and remembers the visitor's choice).
+   ========================================================================== */
+
+:root {
+  /* ---- DARK  (default) ---- */
+  --bg:#071019;  --bg-2:#0a1826;  --surface:#0f2231;  --surface-2:#13283a;
+  --border:#173247;  --border-2:#1f465f;
+  --accent:#4fd6ff;  --accent-2:#6ea8ff;  --accent-dim:rgba(79,214,255,0.08);
+  --ink:#eaf4ff;  --ink-2:#c4ddf2;  --ink-3:#88aecb;  --ink-dim:#5f7d96;
+  --warn:#ff8a3d;  --warn-bg:#2a1c12;  --danger:#ff3b30;  --danger-bg:#2a1414;
+  --gold:#c9a24a;
+
+  /* ---- legacy aliases: old per-page variable names -> canonical tokens ----
+     (lets existing pages theme correctly without renaming every reference) */
+  --bg2:var(--bg-2);
+  --bg-card:var(--surface);
+  --border2:var(--border-2);     --border-hover:var(--border-2);
+  --accent2:var(--accent-2);     --accent3:var(--accent-2);
+  --dim:var(--accent-dim);
+  --text:var(--ink);             --text2:var(--ink-2);    --text3:var(--ink);
+  --text-bright:var(--ink);      --text-dim:var(--ink-dim);
+  --text-muted:var(--ink-3);
+  --ink2:var(--ink-2);           --ink3:var(--ink-3);
+  --chain-color:var(--accent);
+}
+
+/* ---- LIGHT  (Soft Slate-Blue) ---- */
+[data-theme="light"] {
+  --bg:#dde6f0;  --bg-2:#d0dbe8;  --surface:#eaf1f8;  --surface-2:#dfe8f2;
+  --border:#bccbdc;  --border-2:#a3b6cb;
+  --accent:#0a6f9e;  --accent-2:#155a8f;  --accent-dim:rgba(10,111,158,0.08);
+  --ink:#16293a;  --ink-2:#3a4f64;  --ink-3:#5e7186;  --ink-dim:#7c8ea0;
+  --warn:#b35a13;  --warn-bg:#f3e6d8;  --danger:#c0271c;  --danger-bg:#f3dedb;
+  --gold:#9a7b2a;
+}
+
+/* verify.html uses --accent3 as a pale background fill, not a text accent */
+[data-page="verify"] { --accent3: var(--surface-2); }
+
+/* gentle cross-fade when the theme flips */
+body { transition: background-color .25s ease, color .25s ease; }
+
+/* ============================================================================
+   THERMOMETER DIVIDER — signature element (theme-independent mercury scale)
+   bulb = reservoir; the red->cold gradient flows OUT of it; inset 8px.
+   ========================================================================== */
+.thermo{position:relative;height:14px;background:var(--bg-2);display:flex;align-items:center;padding:0 0 0 8px;flex-shrink:0;z-index:99;border-bottom:1px solid var(--border)}
+.thermo-bulb{width:14px;height:14px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 35% 30%,#ff7a70,#ff3b30);box-shadow:0 0 8px rgba(255,59,48,0.55)}
+.thermo-line{flex:1;height:3px;border-radius:2px;margin-left:-3px;background:linear-gradient(90deg,#ff3b30 0%,#ff8a3d 14%,#ffd166 30%,#4fd6ff 62%,#4fd6ff 100%);box-shadow:0 0 6px rgba(255,59,48,0.25)}
+.thermo-ticks{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent 0 39px,rgba(255,255,255,0.08) 39px 40px);pointer-events:none}
+
+/* attached at the bottom edge of a fixed/sticky nav or header */
+.thermo--attached{position:absolute;left:0;right:0;bottom:0;height:12px;padding:0 0 0 8px;margin:0;background:transparent;border:none;z-index:5;display:flex;align-items:center}
+.thermo--attached .thermo-bulb{position:static;transform:none;flex-shrink:0;width:11px;height:11px}
+.thermo--attached .thermo-line{flex:1;height:3px;margin-left:-3px;border-radius:0 2px 2px 0}
+.thermo--attached .thermo-ticks{display:none}
+
+/* slim full-width variant for pages with no nav bar (e.g. sources): same
+   bulb-reservoir + gradient as the attached underline, but in normal flow */
+.thermo--slim{height:12px;background:transparent;border-bottom:none}
+.thermo--slim .thermo-ticks{display:none}
+
+/* ============================================================================
+   THEME TOGGLE BUTTON  (glyph set by theme.js: sun in dark, moon in light)
+   ========================================================================== */
+.theme-toggle{font-family:var(--mono,'Share Tech Mono',monospace);font-size:0.8rem;line-height:1;cursor:pointer;background:transparent;border:1px solid var(--border);color:var(--ink-3);width:30px;height:30px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:color .15s,border-color .15s}
+.theme-toggle:hover{color:var(--accent);border-color:var(--accent)}
+.theme-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* when placed inside a <ul> nav, strip list bullet */
+li > .theme-toggle{vertical-align:middle}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>April Gate — Tamper-Evident Cold Chain Verification</title>
+  <title>April Gate — Team</title>
   <meta name="description" content="Cryptographically verified cold chain integrity for pharmaceutical cargo. Powered by Solana." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -777,275 +777,68 @@
     .thermo--attached .thermo-bulb{position:static;transform:none;flex-shrink:0;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff7a70,#ff3b30);box-shadow:0 0 8px rgba(255,59,48,0.55)}
     .thermo--attached .thermo-line{flex:1;height:3px;margin-left:-3px;border-radius:0 2px 2px 0;background:linear-gradient(90deg,#ff3b30 0%,#ff8a3d 14%,#ffd166 30%,#4fd6ff 62%,#4fd6ff 100%);box-shadow:0 0 6px rgba(255,59,48,0.25)}
 
+  
+    /* team photo placeholders — swap the initials div for <img src=...> when ready */
+    .team-photo{width:96px;height:96px;border-radius:50%;border:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:2rem;color:var(--accent);letter-spacing:0.04em;margin-bottom:1.25rem;overflow:hidden;flex-shrink:0}
+    .team-photo img{width:100%;height:100%;object-fit:cover}
+    .team-page-head{padding-top:9rem}
+    .team-intro{font-family:var(--body);color:var(--text);max-width:46rem;line-height:1.7;margin-top:1rem}
+
   </style>
 </head>
 <body>
 
   <!-- NAV -->
   <nav>
-    <div class="nav-logo">APRIL<span>//</span>GATE</div>
+    <a href="index.html" class="nav-logo">APRIL<span>//</span>GATE</a>
     <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
       <a href="how-it-works.html" class="nav-tag">LEGAL &amp; COMPLIANCE</a>
       <a href="verify.html" class="nav-tag">VERIFY</a>
-      <a href="team.html" class="nav-tag">TEAM</a>
+      <a href="team.html" class="nav-tag" style="color:var(--accent);border-color:var(--accent);">TEAM</a>
       <a href="dashboard.html" class="nav-tag">DASHBOARD</a>
-      <a href="whitepaper.pdf" target="_blank" class="nav-tag" style="color:var(--accent);border-color:var(--accent);">WHITEPAPER</a>
-      <div class="nav-tag">IN DEVELOPMENT · 2026</div>
+      <a href="whitepaper.pdf" target="_blank" class="nav-tag">WHITEPAPER</a>
     </div>
       <div class="thermo thermo--attached" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
   </nav>
 
-  <!-- HERO -->
-  <div class="container">
-    <div class="hero">
-
-      <!-- SVG circuit decoration -->
-      <svg class="circuit-lines" viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMid slice">
-        <g stroke="#4fd6ff" stroke-width="1" fill="none">
-          <path d="M600,100 L400,100 L400,200 L200,200"/>
-          <circle cx="400" cy="100" r="4" fill="#4fd6ff"/>
-          <circle cx="200" cy="200" r="4" fill="#4fd6ff"/>
-          <path d="M600,250 L350,250 L350,350 L150,350 L150,450"/>
-          <circle cx="350" cy="250" r="3" fill="#4fd6ff" opacity="0.6"/>
-          <circle cx="350" cy="350" r="3" fill="#4fd6ff" opacity="0.6"/>
-          <circle cx="150" cy="450" r="4" fill="#4fd6ff"/>
-          <path d="M600,400 L450,400 L450,500 L300,500 L300,600 L100,600"/>
-          <circle cx="450" cy="400" r="3" fill="#6ea8ff" opacity="0.7"/>
-          <circle cx="300" cy="500" r="3" fill="#6ea8ff" opacity="0.7"/>
-          <circle cx="100" cy="600" r="4" fill="#6ea8ff"/>
-          <path d="M600,550 L500,550 L500,650 L250,650"/>
-          <circle cx="500" cy="550" r="3" fill="#4fd6ff" opacity="0.5"/>
-          <path d="M600,700 L420,700 L420,750 L200,750 L200,800"/>
-          <circle cx="420" cy="700" r="3" fill="#4fd6ff" opacity="0.4"/>
-          <!-- Small squares at nodes -->
-          <rect x="196" y="196" width="8" height="8" fill="none" stroke="#4fd6ff"/>
-          <rect x="146" y="446" width="8" height="8" fill="none" stroke="#4fd6ff"/>
-          <rect x="96" y="596" width="8" height="8" fill="none" stroke="#6ea8ff"/>
-        </g>
-      </svg>
-
-      <div class="hero-eyebrow">Tamper-Evident Cold Chain Verification</div>
-
-      <h1 class="hero-title">
-        APRIL
-        <span class="accent-word">GATE</span>
-      </h1>
-
-      <div class="hero-subtitle">// POWERED BY SOLANA · TAMPER-EVIDENT PROOF CHAIN · HARDWARE CRYPTOGRAPHY</div>
-
-      <p class="hero-description">
-        Pharmaceutical cargo worth <strong>billions</strong> spoils or gets disputed every year —
-        because cold chain records can be altered, backdated, and challenged.
-        April Gate makes tampering <strong>cryptographically impossible</strong>.
-        Not just hard. Impossible.
-      </p>
-
-      <div class="hero-cta">
-        <a href="dashboard.html" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> LAUNCH DASHBOARD</a> <a href="mailto:irina@aprilgatehq.com" class="btn-secondary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
-          GET IN TOUCH
-        </a>
-        <a href="verify.html" class="btn-secondary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> VERIFY SHIPMENT</a> <a href="how-it-works.html" class="btn-secondary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,8 12,12 14,14"/></svg>
-          HOW IT WORKS
-        </a>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- STAT STRIP -->
-  <div class="container">
-    <div class="stat-strip">
-      <div class="stat-item">
-        <span class="stat-number">$35B</span>
-        <div class="stat-label">Annual pharma cold chain losses</div>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number">20%</span>
-        <div class="stat-label">Temperature-sensitive drugs damaged in transit</div>
-      </div>
-      <div class="stat-item">
-        <span class="stat-number">1</span>
-        <div class="stat-label">Cryptographic proof replaces thousands of mutable logs</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PROBLEM -->
-  <section>
+  <!-- TEAM -->
+  <section class="team-page-head">
     <div class="container">
-      <div class="section-tag">The Problem</div>
-      <h2 class="section-title">RECORDS THAT CAN BE CHANGED<br>ARE RECORDS THAT CAN'T BE TRUSTED</h2>
+      <div class="section-tag">The Team</div>
+      <h2 class="section-title">BUILT BY PEOPLE WHO<br>UNDERSTAND THE PROBLEM</h2>
+      <p class="team-intro">A two-person team spanning the engineering and the industry sides of the cold chain — the people building April Gate and the reason it solves a real problem.</p>
 
-      <div class="problem-grid">
-        <div class="problem-text">
-          <p>
-            When a pharmaceutical cold chain dispute arises today, there is
-            <strong>no immutable record</strong>. Centralized logs live on servers
-            controlled by one party. Sensor data can be backdated. Liability
-            arguments drag on for months — and someone always loses money they
-            shouldn't have.
+      <div class="team-grid" style="margin-top:3rem;">
+        <div class="team-card">
+          <!-- replace this initials div with: <img src="photos/irina.jpg" alt="Irina Guberman"> -->
+          <div class="team-photo">IG</div>
+          <div class="team-role">Founder &amp; Engineer</div>
+          <div class="team-name">IRINA GUBERMAN</div>
+          <p class="team-bio">
+            Founder and engineer who has personally shipped every layer this product needs before — secure-element device identity, networking, cryptography, backend services, and on-chain programs. Solana data-infrastructure experience at Neon Labs; the rest built across the startup world over 25+ years. Patent holder. April Gate is an active Colosseum · Solana Frontier Hackathon submission.
           </p>
-          <p>
-            Insurers pay disputed claims they can't disprove. Distributors absorb
-            losses for excursions they didn't cause. Pharma companies discard product
-            they can't prove was compromised. The entire system runs on <strong>trust
-            that has no mathematical foundation</strong>.
+          <div class="team-tags">
+            <span class="team-tag">SOLANA</span>
+            <span class="team-tag">RUST</span>
+            <span class="team-tag">DISTRIBUTED SYSTEMS</span>
+            <span class="team-tag">IOT NETWORKS</span>
+            <span class="team-tag">PATENT HOLDER</span>
+          </div>
+        </div>
+
+        <div class="team-card">
+          <!-- replace this initials div with: <img src="photos/nina.jpg" alt="Nina Stein"> -->
+          <div class="team-photo">NS</div>
+          <div class="team-role">Co-founder · Industry &amp; Pharma</div>
+          <div class="team-name">NINA STEIN</div>
+          <p class="team-bio">
+            Pharmaceutical-industry insider with current, hands-on experience in temperature monitoring for tightly controlled environments. Deep across compliance, operations, and business development — with direct knowledge of how cold-chain buyers evaluate, what their sensors actually are, and what regulators require. Brings the operator's perspective on real cold-chain pain and the relationships to reach the right pilot partners, insurers, and institutional players.
           </p>
-          <p>
-            April Gate changes the trust model at the root. Not just better logging.
-            <strong>Cryptographically provable truth.</strong>
-          </p>
-        </div>
-
-        <div class="problem-visual">
-          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.15em;margin-bottom:1rem;">
-            // TRADITIONAL LOG — MUTABLE
-          </div>
-          <div class="log-entry">
-            <span class="log-time">2026-04-15 08:14</span>
-            <span class="log-value">4.2°C</span>
-            <span class="log-status status-ok">OK</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">2026-04-15 09:22</span>
-            <span class="log-value">4.8°C</span>
-            <span class="log-status status-ok">OK</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">2026-04-15 11:05</span>
-            <span class="log-value">??°C</span>
-            <span class="log-status status-gap">GAP</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">2026-04-15 14:33</span>
-            <span class="log-value">12.7°C</span>
-            <span class="log-status status-tampered">TAMPERED?</span>
-          </div>
-          <div class="log-entry">
-            <span class="log-time">2026-04-15 15:01</span>
-            <span class="log-value">4.1°C</span>
-            <span class="log-status status-ok">OK</span>
-          </div>
-          <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);font-family:var(--mono);font-size:0.65rem;color:#ff3b30;">
-            ⚠ Who altered the 11:05 record? Nobody knows. Lawyers argue for months.
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- HOW IT WORKS -->
-  <section class="how-bg" id="how">
-    <div class="container">
-      <div class="section-tag">The Solution</div>
-      <h2 class="section-title">HOW APRIL GATE WORKS</h2>
-
-      <div class="steps">
-        <div class="step">
-          <span class="step-number">// 01</span>
-          <div class="step-icon">
-            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><circle cx="12" cy="10" r="3"/></svg>
-          </div>
-          <div class="step-title">HARDWARE SIGNING</div>
-          <p class="step-desc">Each sensor is backed by a secure element chip. Every reading is signed with a private key that never leaves the hardware — making forgery physically impossible.</p>
-        </div>
-
-        <div class="step">
-          <span class="step-number">// 02</span>
-          <div class="step-icon">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M12 8v3M9.5 17l-2.5-3M14.5 17l2.5-3"/></svg>
-          </div>
-          <div class="step-title">MESH CONSENSUS</div>
-          <p class="step-desc">Multiple sensors form a local network and reach cryptographic consensus on readings — even with no internet connection. A single rogue sensor cannot corrupt the record.</p>
-        </div>
-
-        <div class="step">
-          <span class="step-number">// 03</span>
-          <div class="step-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <div class="step-title">ON-CHAIN PROOF CHAIN</div>
-          <p class="step-desc">Each reading is committed to a hash chain anchored on Solana — every entry links to the one before it. Altering or removing any record breaks the chain and is immediately detectable. Only a compact commitment goes on-chain; raw operational data stays encrypted off-chain.</p>
-        </div>
-
-        <div class="step">
-          <span class="step-number">// 04</span>
-          <div class="step-icon">
-            <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          </div>
-          <div class="step-title">ON-CHAIN TRUTH</div>
-          <p class="step-desc">The proof is submitted to Solana on reconnection. Nobody — not us, not the shipper, not anyone — can alter it afterward. One immutable record. Verifiable by all parties instantly.</p>
-        </div>
-      </div>
-
-      <!-- Solana strip -->
-      <div class="solana-strip">
-        <div class="solana-label">WHY SOLANA</div>
-        <div class="solana-stats">
-          <div class="solana-stat">
-            <div class="value">65K</div>
-            <div class="label">Transactions/sec</div>
-          </div>
-          <div class="solana-stat">
-            <div class="value">$0.00025</div>
-            <div class="label">Cost per proof submission</div>
-          </div>
-          <div class="solana-stat">
-            <div class="value">&lt;1s</div>
-            <div class="label">Finality</div>
-          </div>
-          <div class="solana-stat">
-            <div class="value">400ms</div>
-            <div class="label">Block time</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- CONTACT -->
-  <section class="contact-section">
-    <div class="container">
-      <div class="contact-inner">
-        <div class="contact-left">
-          <div class="section-tag">Contact</div>
-          <h2 class="section-title">LET'S TALK ABOUT YOUR COLD CHAIN RISK</h2>
-          <p>
-            We're actively speaking with pharmaceutical cargo insurers and logistics operators
-            to validate our approach. If cold chain claims disputes are a real cost in your
-            business — we'd value 20 minutes of your time.
-          </p>
-          <div class="colosseum-badge">
-            <div class="colosseum-badge-dot"></div>
-            <span class="colosseum-badge-text">PRESENTING AT COLOSSEUM · SOLANA FRONTIER HACKATHON · MAY 2026</span>
-          </div>
-        </div>
-
-        <div class="contact-right">
-          <div class="contact-item">
-            <span class="contact-item-label">// EMAIL</span>
-            <span class="contact-item-value">
-              <a href="mailto:irina@aprilgatehq.com">irina@aprilgatehq.com</a>
-            </span>
-          </div>
-          <div class="contact-item">
-            <span class="contact-item-label">// COMPANY</span>
-            <span class="contact-item-value">April Gate</span>
-          </div>
-          <div class="contact-item">
-            <span class="contact-item-label">// LOCATION</span>
-            <span class="contact-item-value">Chicago, IL · Denver, CO</span>
-          </div>
-          <div class="contact-item">
-            <span class="contact-item-label">// STATUS</span>
-            <span class="contact-item-value">In Development · Seeking Pilot Partners</span>
-          </div>
-          <div class="contact-item">
-            <span class="contact-item-label">// BLOCKCHAIN</span>
-            <span class="contact-item-value">Solana Mainnet (Devnet Active)</span>
+          <div class="team-tags">
+            <span class="team-tag">PHARMA COLD CHAIN</span>
+            <span class="team-tag">TEMPERATURE MONITORING</span>
+            <span class="team-tag">COMPLIANCE</span>
+            <span class="team-tag">PARTNERSHIPS</span>
           </div>
         </div>
       </div>
@@ -1071,6 +864,7 @@
       </div>
     </div>
   </footer>
+
 
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme-default="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,15 +7,7 @@
 <meta name="description" content="Primary sources and references cited by April Gate, the cryptographic cold chain attestation protocol.">
 <style>
   :root {
-    --bg: #0A0A0A;
-    --bg-card: #111111;
-    --text: #F5F5F5;
-    --text-muted: #9AA0A6;
-    --text-dim: #6B7280;
-    --accent: #14F195;
-    --border: #1F1F1F;
-    --border-hover: #2A2A2A;
-  }
+    }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body {
@@ -155,15 +147,22 @@
     header, main, footer { padding: 24px 20px; }
     .meta { margin-bottom: 40px; }
   }
+
+
+  header{position:relative}
 </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
 </head>
 <body>
 <div class="accent-bar"></div>
 
 <header>
-  <a href="/" class="wordmark">APRIL // GATE</a>
+  <a href="/public" class="wordmark">APRIL // GATE</a>
   <div class="wordmark-underline"></div>
+  <button class="theme-toggle" type="button" onclick="toggleTheme()" style="position:absolute;top:1.4rem;right:1.5rem;"></button>
 </header>
+  <div class="thermo thermo--slim" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
 
 <main>
   <h1>Sources</h1>
@@ -291,7 +290,7 @@
 
 <footer>
   <div class="left">© April Gate. Building the bridge to the industries blockchain hasn't reached yet.</div>
-  <div class="right"><a href="/">← aprilgatehq.com</a></div>
+  <div class="right"><a href="/public">← aprilgatehq.com</a></div>
 </footer>
 
 </body>
