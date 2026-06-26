@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme-default="light" data-page="verify">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,22 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Share+Tech+Mono&family=Literata:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg:       #f8f6f1;
-      --bg2:      #f0ede6;
-      --surface:  #ffffff;
-      --border:   #d8d2c8;
-      --border2:  #c8c0b4;
-      --ink:      #1a1814;
-      --ink2:     #4a4540;
-      --ink3:     #7a7268;
-      --accent:   #0a4f3c;
-      --accent2:  #1a7a5e;
-      --accent3:  #e8f4f0;
-      --warn:     #7a3000;
-      --warn-bg:  #fdf0e8;
-      --danger:   #6a0000;
-      --danger-bg:#fdf0f0;
-      --gold:     #8a6a20;
       --display:  'Playfair Display', Georgia, serif;
       --body:     'Literata', Georgia, serif;
       --mono:     'Share Tech Mono', monospace;
@@ -226,7 +210,7 @@
     .verify-btn {
       background: var(--accent);
       border: 1px solid var(--accent);
-      color: #fff;
+      color: var(--bg);
       font-family: var(--mono);
       font-size: 0.72rem;
       letter-spacing: 0.15em;
@@ -348,7 +332,7 @@
     .chain-proof-hash {
       font-family: var(--mono);
       font-size: 0.72rem;
-      color: #0052cc;
+      color: var(--accent-2);
       flex: 1;
       word-break: break-all;
     }
@@ -581,7 +565,7 @@
     /* Contact strip */
     .contact-strip {
       background: var(--accent);
-      color: #fff;
+      color: var(--bg);
       padding: 3rem 2rem;
       text-align: center;
       position: relative;
@@ -609,7 +593,7 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: #fff;
+      background: var(--bg);
       color: var(--accent);
       font-family: var(--mono);
       font-size: 0.75rem;
@@ -689,7 +673,13 @@
       .step         { grid-template-columns: 60px 1fr; }
       .header-nav   { display: none; }
     }
+  
+
+  
+
   </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
 </head>
 <body>
 
@@ -705,10 +695,13 @@
       <a href="index.html" class="nav-link">Home</a>
       <a href="verify.html" class="nav-link active">Verify</a>
       <a href="how-it-works.html" class="nav-link">Legal &amp; Compliance</a>
+      <a href="team.html" class="nav-link">Team</a>
       <a href="dashboard.html" class="nav-link">Dashboard</a>
       <a href="whitepaper.pdf" target="_blank" class="nav-link" style="color:var(--accent);">Whitepaper</a>
       <a href="mailto:irina@aprilgatehq.com" class="nav-link">Contact</a>
+      <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
     </nav>
+      <div class="thermo thermo--attached" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
   </header>
 
   <!-- HERO -->
