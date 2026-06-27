@@ -21,6 +21,9 @@
   --warn:#ff8a3d;  --warn-bg:#2a1c12;  --danger:#ff3b30;  --danger-bg:#2a1414;
   --gold:#c9a24a;
 
+  /* nav bar: translucent dark glass in dark mode */
+  --nav-bg:rgba(7,16,25,0.85);  --nav-fg:#5f7d96;
+
   /* ---- legacy aliases: old per-page variable names -> canonical tokens ----
      (lets existing pages theme correctly without renaming every reference) */
   --bg2:var(--bg-2);
@@ -43,6 +46,8 @@
   --ink:#16293a;  --ink-2:#3a4f64;  --ink-3:#5e7186;  --ink-dim:#7c8ea0;
   --warn:#b35a13;  --warn-bg:#f3e6d8;  --danger:#c0271c;  --danger-bg:#f3dedb;
   --gold:#9a7b2a;
+  /* nav bar: frosted light glass + readable dark text in light mode */
+  --nav-bg:rgba(234,241,248,0.85);  --nav-fg:#3a4f64;
 }
 
 /* verify.html uses --accent3 as a pale background fill, not a text accent */

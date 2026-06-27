@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme-default="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,16 +10,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg:         #071019;
-      --bg2:        #0a1826;
-      --surface:    #0f2231;
-      --border:     #173247;
-      --accent:     #4fd6ff;
-      --accent2:    #6ea8ff;
-      --accent-dim: rgba(79,214,255, 0.08);
-      --text:       #c4ddf2;
-      --text-dim:   #5f7d96;
-      --text-bright:#eaf4ff;
       --mono:       'Share Tech Mono', monospace;
       --display:    'Bebas Neue', sans-serif;
       --body:       'DM Sans', sans-serif;
@@ -80,7 +70,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(7,16,25,0.85);
+      background: var(--nav-bg);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
     }
@@ -101,7 +91,7 @@
     .nav-tag {
       font-family: var(--mono);
       font-size: 0.7rem;
-      color: var(--text-dim);
+      color: var(--nav-fg);
       letter-spacing: 0.1em;
       border: 1px solid var(--border);
       padding: 0.3rem 0.8rem;
@@ -202,7 +192,7 @@
       align-items: center;
       gap: 0.5rem;
       background: var(--accent);
-      color: #071019;
+      color: var(--bg);
       font-family: var(--mono);
       font-size: 0.8rem;
       letter-spacing: 0.15em;
@@ -216,7 +206,7 @@
     }
 
     .btn-primary:hover {
-      background: #6ef0ff;
+      background: var(--accent);
       transform: translateY(-2px);
     }
 
@@ -380,14 +370,14 @@
 
     .status-tampered {
       background: rgba(255,59,48,0.1);
-      color: #ff3b30;
+      color: var(--danger);
       border: 1px solid rgba(255,59,48,0.2);
       animation: pulse-red 2s infinite;
     }
 
     .status-gap {
       background: rgba(255,138,61,0.1);
-      color: #ff8a3d;
+      color: var(--warn);
       border: 1px solid rgba(255,138,61,0.2);
     }
 
@@ -663,7 +653,7 @@
     }
 
     .contact-item-value a:hover {
-      color: #6ef0ff;
+      color: var(--accent);
     }
 
     /* ── COLOSSEUM BADGE ── */
@@ -765,19 +755,12 @@
       .solana-stats { gap: 1.5rem; }
     }
   
-    /* THERMOMETER DIVIDER (signature element) — red confined to this strip + real alerts */
-    .thermo{position:relative;height:14px;background:var(--bg2,#0a1826);display:flex;align-items:center;padding:0 0 0 4px;flex-shrink:0}
-    .thermo-bulb{width:14px;height:14px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 35% 30%,#ff7a70,#ff3b30);box-shadow:0 0 8px rgba(255,59,48,0.55)}
-    .thermo-line{flex:1;height:3px;border-radius:2px;margin-left:-3px;background:linear-gradient(90deg,#ff3b30 0%,#ff8a3d 14%,#ffd166 30%,#4fd6ff 62%,#4fd6ff 100%);box-shadow:0 0 6px rgba(255,59,48,0.25)}
-    .thermo-ticks{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent 0 39px,rgba(255,255,255,0.08) 39px 40px);pointer-events:none}
 
   
-    /* thermo attached at nav bottom: bulb = reservoir, gradient flows OUT of it */
-    .thermo--attached{position:absolute;left:0;right:0;bottom:0;height:12px;padding:0 0 0 8px;margin:0;background:transparent;border:none;z-index:5;display:flex;align-items:center}
-    .thermo--attached .thermo-bulb{position:static;transform:none;flex-shrink:0;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff7a70,#ff3b30);box-shadow:0 0 8px rgba(255,59,48,0.55)}
-    .thermo--attached .thermo-line{flex:1;height:3px;margin-left:-3px;border-radius:0 2px 2px 0;background:linear-gradient(90deg,#ff3b30 0%,#ff8a3d 14%,#ffd166 30%,#4fd6ff 62%,#4fd6ff 100%);box-shadow:0 0 6px rgba(255,59,48,0.25)}
 
   </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
 </head>
 <body>
 
@@ -790,6 +773,7 @@
       <a href="team.html" class="nav-tag">TEAM</a>
       <a href="dashboard.html" class="nav-tag">DASHBOARD</a>
       <a href="whitepaper.pdf" target="_blank" class="nav-tag" style="color:var(--accent);border-color:var(--accent);">WHITEPAPER</a>
+      <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
       <div class="nav-tag">IN DEVELOPMENT · 2026</div>
     </div>
       <div class="thermo thermo--attached" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
