@@ -14,4 +14,7 @@ yarn-error.log*
 .vscode/*
 .env
 .env.*
+!local/.env.example
+local/.env
 .DS_Store
+.dev.vars

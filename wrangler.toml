@@ -1,28 +1,33 @@
 # Cloudflare Pages config for coldchain-web.
 #
-# This file is only needed for the waitlist backend (functions/waitlist.js).
-# It declares the D1 binding as code so `wrangler pages dev` works locally and
-# the binding is version-controlled. If you'd rather configure the binding in
-# the Cloudflare dashboard instead (Pages project → Settings → Functions → D1
-# bindings), you can delete this file — the static site deploys fine without it.
-#
-# IMPORTANT: pages_build_output_dir must match your Pages "build output
-# directory" (the folder holding index.html). This repo serves from public/.
+# Declares the D1 binding (as code, so `wrangler pages dev` works locally) and
+# non-secret vars. Secrets are NOT here — set them with `wrangler pages secret
+# put`. pages_build_output_dir must match your Pages "build output directory"
+# (the folder holding index.html). This repo serves from public/.
 
 name = "coldchain-web"
 pages_build_output_dir = "public"
 
-# D1 database that stores waitlist signups. Create it once with:
-#   wrangler d1 create aprilgate-waitlist
-# then paste the printed database_id below.
+# One D1 database (binding WAITLIST_DB) holds every app table:
+#   signups   (schema.sql)          — waitlist
+#   loi + loi_tokens (schema/loi.sql) — Letters of Intent + magic-link tokens
+#   readings  (schema/readings.sql)  — temperature telemetry
+# Create it once, then paste the printed database_id below:
+#   npx wrangler d1 create aprilgate-waitlist
+#   npx wrangler d1 execute aprilgate-waitlist --file=./schema.sql          --remote
+#   npx wrangler d1 execute aprilgate-waitlist --file=./schema/loi.sql      --remote
+#   npx wrangler d1 execute aprilgate-waitlist --file=./schema/readings.sql --remote
 [[d1_databases]]
 binding = "WAITLIST_DB"
 database_name = "aprilgate-waitlist"
 database_id = "PASTE_DATABASE_ID_HERE"
 
-# ── Optional: per-signup founder email via Resend ──
-# Set RESEND_API_KEY as an *encrypted* var/secret in the dashboard (don't commit
-# it). NOTIFY_TO / NOTIFY_FROM can live here as plain vars if you like.
-# [vars]
-# NOTIFY_TO   = "irina@aprilgatehq.com"
-# NOTIFY_FROM = "April Gate Waitlist <waitlist@aprilgatehq.com>"
+# Non-secret vars. Override in the dashboard if you prefer.
+[vars]
+NOTIFY_TO       = "irina@aprilgatehq.com"
+NOTIFY_FROM     = "April Gate <onboarding@resend.dev>"      # use a Resend-verified aprilgatehq.com sender in prod
+PUBLIC_BASE_URL = "https://aprilgatehq.com"                 # base for magic-link URLs
+
+# ── Secrets — set these with wrangler, never commit them ──
+#   npx wrangler pages secret put RESEND_API_KEY   # enables Resend email
+#   npx wrangler pages secret put INGEST_KEY       # shared secret for /api/ingest

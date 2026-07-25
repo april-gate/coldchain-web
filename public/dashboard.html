@@ -350,6 +350,142 @@
               <canvas id="tempChart"></canvas>
             </div>
           </div>
+
+          <!-- ── LIVE TELEMETRY (real D1 readings via /api/ingest) ── -->
+          <style>
+            .lt-panel{background:var(--surface);border:1px solid var(--border);margin-top:1.5rem;position:relative}
+            .lt-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+            .lt-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
+            .lt-title{font-family:var(--mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
+            .lt-title b{color:var(--accent)}
+            .lt-live{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text-dim);display:flex;align-items:center;gap:0.4rem}
+            .lt-live .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:ltPulse 1.8s infinite}
+            @keyframes ltPulse{0%,100%{opacity:1}50%{opacity:0.3}}
+            .lt-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border)}
+            .lt-stat{background:var(--surface);padding:1rem 1.25rem}
+            .lt-stat .k{font-family:var(--mono);font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.35rem}
+            .lt-stat .v{font-family:var(--display);font-size:1.6rem;line-height:1;color:var(--text-bright)}
+            .lt-stat .v.accent{color:var(--accent)}
+            .lt-chart{padding:1.25rem;border-top:1px solid var(--border)}
+            .lt-chart svg{width:100%;height:180px;display:block}
+            .lt-empty{padding:2rem 1.25rem;text-align:center;font-family:var(--mono);font-size:0.72rem;letter-spacing:0.08em;color:var(--text-dim)}
+            .lt-tablewrap{max-height:240px;overflow:auto;border-top:1px solid var(--border)}
+            .lt-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:0.72rem}
+            .lt-table th{position:sticky;top:0;background:var(--bg-2,var(--surface));text-align:left;padding:0.55rem 1.25rem;color:var(--text-dim);font-weight:400;letter-spacing:0.1em;text-transform:uppercase;font-size:0.58rem;border-bottom:1px solid var(--border)}
+            .lt-table td{padding:0.5rem 1.25rem;border-bottom:1px solid var(--border);color:var(--text2)}
+            .lt-table td.temp{color:var(--accent)}
+            @media(max-width:720px){.lt-stats{grid-template-columns:repeat(2,1fr)}}
+          </style>
+          <div class="lt-panel" id="ltPanel" data-shipment="ship-001">
+            <div class="lt-head">
+              <div class="lt-title">// LIVE TELEMETRY — <b id="ltShipment">ship-001</b></div>
+              <div class="lt-live"><span class="dot"></span><span id="ltStatus">POLLING…</span></div>
+            </div>
+            <div class="lt-stats">
+              <div class="lt-stat"><div class="k">Device</div><div class="v" id="ltDevice">—</div></div>
+              <div class="lt-stat"><div class="k">Latest temp</div><div class="v accent" id="ltTemp">—</div></div>
+              <div class="lt-stat"><div class="k">Last seen</div><div class="v" id="ltSeen" style="font-size:0.95rem;font-family:var(--mono)">—</div></div>
+              <div class="lt-stat"><div class="k">Proof count</div><div class="v" id="ltProof">—</div></div>
+              <div class="lt-stat"><div class="k">Readings</div><div class="v" id="ltCount">0</div></div>
+            </div>
+            <div class="lt-chart" id="ltChartWrap" style="display:none">
+              <svg id="ltChart" viewBox="0 0 600 180" preserveAspectRatio="none" aria-label="Temperature timeline"></svg>
+            </div>
+            <div class="lt-empty" id="ltEmpty">Waiting for the first reading from <b>/api/ingest</b>…</div>
+            <div class="lt-tablewrap" id="ltTableWrap" style="display:none">
+              <table class="lt-table">
+                <thead><tr><th>Device time</th><th>Temp °F</th><th>Proof</th><th>Received</th></tr></thead>
+                <tbody id="ltRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <script>
+            (function () {
+              var panel = document.getElementById("ltPanel");
+              if (!panel) return;
+              var SHIPMENT = panel.getAttribute("data-shipment") || "ship-001";
+              var POLL_MS = 7000;
+
+              var el = function (id) { return document.getElementById(id); };
+              document.getElementById("ltShipment").textContent = SHIPMENT;
+
+              function fmtTime(s) {
+                if (!s) return "—";
+                var d = new Date(s);
+                if (isNaN(d)) return String(s).slice(11, 19) || String(s);
+                return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+              }
+
+              function drawChart(readingsAsc) {
+                var svg = el("ltChart");
+                var W = 600, H = 180, pad = 8;
+                var temps = readingsAsc.map(function (r) { return r.temp_f; })
+                                       .filter(function (t) { return typeof t === "number"; });
+                if (temps.length < 2) { el("ltChartWrap").style.display = "none"; return; }
+                el("ltChartWrap").style.display = "block";
+                var min = Math.min.apply(null, temps), max = Math.max.apply(null, temps);
+                if (max - min < 1) { max += 0.5; min -= 0.5; }
+                var n = readingsAsc.length;
+                var x = function (i) { return pad + (i / (n - 1)) * (W - 2 * pad); };
+                var y = function (t) { return H - pad - ((t - min) / (max - min)) * (H - 2 * pad); };
+                var pts = readingsAsc.map(function (r, i) { return x(i) + "," + y(r.temp_f); }).join(" ");
+                var last = readingsAsc[n - 1];
+                svg.innerHTML =
+                  '<polyline fill="none" stroke="var(--accent)" stroke-width="2" ' +
+                    'vector-effect="non-scaling-stroke" points="' + pts + '"/>' +
+                  '<circle cx="' + x(n - 1) + '" cy="' + y(last.temp_f) + '" r="3.5" fill="var(--accent)"/>';
+              }
+
+              function render(readings) {
+                // API returns newest-first; ascending for the chart/table order.
+                var asc = readings.slice().reverse();
+                var latest = readings[0];
+
+                el("ltDevice").textContent = (latest && latest.device_id) || "—";
+                el("ltTemp").textContent = latest && typeof latest.temp_f === "number"
+                  ? latest.temp_f.toFixed(1) + "°F" : "—";
+                el("ltSeen").textContent = latest ? fmtTime(latest.timestamp || latest.received_at) : "—";
+                el("ltProof").textContent = latest && latest.proof_count != null ? latest.proof_count : "—";
+                el("ltCount").textContent = readings.length;
+
+                if (!readings.length) {
+                  el("ltEmpty").style.display = "block";
+                  el("ltTableWrap").style.display = "none";
+                  el("ltChartWrap").style.display = "none";
+                  return;
+                }
+                el("ltEmpty").style.display = "none";
+                el("ltTableWrap").style.display = "block";
+
+                var rows = readings.slice(0, 50).map(function (r) {
+                  return "<tr><td>" + fmtTime(r.timestamp) + "</td>" +
+                    '<td class="temp">' + (typeof r.temp_f === "number" ? r.temp_f.toFixed(1) : "—") + "</td>" +
+                    "<td>" + (r.proof_count != null ? r.proof_count : "—") + "</td>" +
+                    "<td>" + fmtTime(r.received_at) + "</td></tr>";
+                }).join("");
+                el("ltRows").innerHTML = rows;
+                drawChart(asc);
+              }
+
+              async function poll() {
+                try {
+                  var res = await fetch("/api/readings?shipment_id=" + encodeURIComponent(SHIPMENT), { cache: "no-store" });
+                  var data = await res.json();
+                  if (data && data.ok) {
+                    render(data.readings || []);
+                    el("ltStatus").textContent = "LIVE · " + fmtTime(new Date().toISOString());
+                  } else {
+                    el("ltStatus").textContent = "NO DATA";
+                  }
+                } catch (e) {
+                  el("ltStatus").textContent = "OFFLINE";
+                }
+              }
+              poll();
+              setInterval(poll, POLL_MS);
+            })();
+          </script>
         </div>
       </div>
 

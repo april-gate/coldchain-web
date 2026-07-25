@@ -120,7 +120,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   return json({ ok: true });
 }
 
-// Any non-POST method → 405 (keeps the endpoint honest; static 404 otherwise).
-export async function onRequestGet() {
-  return json({ ok: false, error: "Method not allowed." }, 405);
-}
+// NOTE: legacy endpoint. The live form now posts to /loi (functions/loi.js);
+// this remains only for backward compatibility. No onRequestGet is exported on
+// purpose, so GET /waitlist falls through to the /waitlist → /waitlist.html
+// redirect in public/_redirects instead of returning 405.

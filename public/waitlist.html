@@ -270,6 +270,9 @@
 
     .field { margin-bottom: 1.1rem; }
 
+    /* honeypot — kept out of the visual + a11y tree, but present for bots */
+    .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
     .field label {
       display: block;
       font-family: var(--mono);
@@ -617,6 +620,11 @@
           <div class="form-toperror" id="formTopError" role="alert"></div>
 
           <form id="waitlistForm" novalidate>
+            <!-- honeypot: hidden from humans; bots that fill it are silently dropped -->
+            <div class="hp" aria-hidden="true">
+              <label for="website">Website</label>
+              <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+            </div>
             <div class="field">
               <label for="fullName">Full name <span class="req" aria-hidden="true">*</span></label>
               <input type="text" id="fullName" name="fullName" autocomplete="name" required
@@ -656,6 +664,13 @@
               </select>
             </div>
 
+            <div class="field">
+              <label for="intent">Your letter of intent <span class="req" aria-hidden="true">*</span></label>
+              <textarea id="intent" name="intent" rows="4" required aria-required="true"
+                        placeholder="In a line or two: what you ship, the cold-chain problem you need to prove, and what you're hoping April Gate does for you."></textarea>
+              <span class="field-error" id="err-intent">Please add a short letter of intent.</span>
+            </div>
+
             <button type="submit" class="submit-btn" id="submitBtn">Claim early-bird access</button>
 
             <p class="form-microcopy">
@@ -670,7 +685,8 @@
               <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
             <h3>You're on the founding list.</h3>
-            <p>You'll be first to hear as we build — and first to get it.<br>Thank you.</p>
+            <p>You'll be first to hear as we build — and first to get it. Thank you.<br>
+               <span style="color:var(--text2);font-size:0.88rem;">Check your inbox for a link to confirm your email.</span></p>
           </div>
         </div>
 
@@ -752,16 +768,16 @@
   <script>
     (function () {
       // ── Backend endpoint ─────────────────────────────────────────────
-      // Cloudflare Pages Function (native). To switch to Formspree instead,
-      // set this to "https://formspree.io/f/XXXXXXXX" — no other change needed.
-      var ENDPOINT = "/waitlist";
+      // Cloudflare Pages Function: stores the lead (LOI) + emails a magic link
+      // to confirm the address. An unverified lead is still stored and counts.
+      var ENDPOINT = "/loi";
 
       var form       = document.getElementById("waitlistForm");
       var successBox = document.getElementById("formSuccess");
       var topError   = document.getElementById("formTopError");
       var submitBtn  = document.getElementById("submitBtn");
 
-      var REQUIRED = ["fullName", "email", "company"];
+      var REQUIRED = ["fullName", "email", "company", "intent"];
       var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       function fieldWrap(id) { return document.getElementById(id).closest(".field"); }
@@ -807,6 +823,9 @@
           company:      document.getElementById("company").value.trim(),
           title:        document.getElementById("title").value.trim(),
           facilityType: document.getElementById("facilityType").value,
+          intent:       document.getElementById("intent").value.trim(),  // letter of intent
+          website:      document.getElementById("website").value,  // honeypot
+          consent_version: "loi-v1",
           page:         "waitlist",
           submittedAt:  new Date().toISOString()
         };
