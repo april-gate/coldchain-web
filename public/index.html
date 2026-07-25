@@ -101,6 +101,28 @@
     }
     .nav-tag:hover { color: var(--accent); border-color: var(--accent); }
 
+    /* prominent primary nav CTA — filled accent, the site's top action */
+    .nav-cta {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: var(--accent);
+      color: var(--bg);
+      border: 1px solid var(--accent);
+      padding: 0.42rem 1.05rem;
+      border-radius: 2px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: transform 0.15s, filter 0.2s;
+      animation: navGlow 2.6s ease-in-out infinite;
+    }
+    .nav-cta:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    @keyframes navGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(79,214,255,0.35); }
+      50%      { box-shadow: 0 0 0 5px rgba(79,214,255,0); }
+    }
+
     /* ── HERO ── */
     .hero {
       min-height: 100vh;
@@ -773,6 +795,7 @@
       <a href="team.html" class="nav-tag">TEAM</a>
       <a href="dashboard.html" class="nav-tag">DASHBOARD</a>
       <a href="whitepaper.pdf" target="_blank" class="nav-tag" style="color:var(--accent);border-color:var(--accent);">WHITEPAPER</a>
+      <a href="waitlist.html" class="nav-cta">★ Join the Waitlist</a>
       <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
       <div class="nav-tag">IN DEVELOPMENT · 2026</div>
     </div>
@@ -825,7 +848,7 @@
       </p>
 
       <div class="hero-cta">
-        <a href="dashboard.html" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> LAUNCH DASHBOARD</a> <a href="mailto:irina@aprilgatehq.com" class="btn-secondary">
+        <a href="waitlist.html" class="btn-primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> GET EARLY ACCESS</a> <a href="dashboard.html" class="btn-secondary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> LAUNCH DASHBOARD</a> <a href="mailto:irina@aprilgatehq.com" class="btn-secondary">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
           GET IN TOUCH
         </a>

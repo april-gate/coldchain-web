@@ -1,0 +1,5 @@
+# Cloudflare Pages redirects.
+# Pretty URLs for the early-access page (nice for sales-email links).
+/design-partner   /waitlist.html   302
+/early-access     /waitlist.html   302
+/waitlist         /waitlist.html   302
