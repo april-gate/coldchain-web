@@ -5,7 +5,7 @@
 # put`. pages_build_output_dir must match your Pages "build output directory"
 # (the folder holding index.html). This repo serves from public/.
 
-name = "coldchain-web"
+name = "aprilgate"
 pages_build_output_dir = "public"
 
 # One D1 database (binding WAITLIST_DB) holds every app table:
@@ -20,7 +20,7 @@ pages_build_output_dir = "public"
 [[d1_databases]]
 binding = "WAITLIST_DB"
 database_name = "aprilgate-waitlist"
-database_id = "PASTE_DATABASE_ID_HERE"
+database_id = "689b7c00-2c7f-45c2-b7f0-e2c39f981905"
 
 # Non-secret vars. Override in the dashboard if you prefer.
 [vars]
