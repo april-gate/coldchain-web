@@ -73,6 +73,26 @@
 
     .nav-links a:hover { color: var(--accent); }
 
+    /* prominent primary nav CTA — filled accent, the site's top action */
+    .nav-links a.nav-cta {
+      background: var(--accent);
+      color: var(--bg);
+      font-family: var(--mono, 'Share Tech Mono', monospace);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 600;
+      padding: 0.4rem 1rem;
+      border-radius: 2px;
+      transition: transform 0.15s, filter 0.2s;
+      animation: navGlow 2.6s ease-in-out infinite;
+    }
+    .nav-links a.nav-cta:hover { color: var(--bg); transform: translateY(-1px); filter: brightness(1.06); }
+    @keyframes navGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(79,214,255,0.35); }
+      50%      { box-shadow: 0 0 0 5px rgba(79,214,255,0); }
+    }
+
     /* ── HERO ── */
     .hero {
       max-width: 860px;
@@ -639,8 +659,8 @@
       <li><a href="verify.html">Verify</a></li>
        <li><a href="team.html">Team</a></li>
       <li><a href="dashboard.html">Dashboard</a></li>
-      <li><a href="whitepaper.pdf" target="_blank" style="color:var(--accent);">Whitepaper</a></li>
       <li><a href="mailto:irina@aprilgatehq.com">Contact</a></li>
+      <li><a href="waitlist.html" class="nav-cta">★ Join the Waitlist</a></li>
       <li><button class="theme-toggle" type="button" onclick="toggleTheme()"></button></li>
     </ul>
       <div class="thermo thermo--attached" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
@@ -1091,7 +1111,6 @@
           <a href="verify.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">VERIFY</a>
           <a href="dashboard.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">DASHBOARD</a>
           <a href="sources.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">SOURCES &amp; REFERENCES</a>
-          <a href="whitepaper.pdf" target="_blank" style="font-family:var(--mono);font-size:0.65rem;color:var(--accent);letter-spacing:0.1em;text-decoration:none;">WHITEPAPER</a>
           <a href="mailto:irina@aprilgatehq.com" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">CONTACT</a>
         </div>
         <div class="footer-solana">
