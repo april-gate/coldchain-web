@@ -24,8 +24,8 @@ database_id = "689b7c00-2c7f-45c2-b7f0-e2c39f981905"
 
 # Non-secret vars. Override in the dashboard if you prefer.
 [vars]
-NOTIFY_TO       = "irina@aprilgatehq.com"
-NOTIFY_FROM     = "April Gate <onboarding@resend.dev>"      # use a Resend-verified aprilgatehq.com sender in prod
+NOTIFY_TO       = "aprilgatehq@gmail.com"                    # where founder signup alerts land
+NOTIFY_FROM     = "April Gate <waitlist@aprilgatehq.com>"   # requires aprilgatehq.com verified in Resend
 PUBLIC_BASE_URL = "https://aprilgatehq.com"                 # base for magic-link URLs
 
 # ── Secrets — set these with wrangler, never commit them ──

@@ -28,7 +28,7 @@ export async function onRequestGet({ request, env }) {
 
   try {
     const { results } = await env.WAITLIST_DB.prepare(
-      `SELECT id, shipment_id, device_id, proof_count, timestamp, temp_f, received_at
+      `SELECT id, shipment_id, device_id, proof_count, timestamp, temp_c, received_at
          FROM readings
         WHERE shipment_id = ?
         ORDER BY id DESC

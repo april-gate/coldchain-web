@@ -357,6 +357,8 @@
             .lt-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;padding:1rem 1.25rem;border-bottom:1px solid var(--border)}
             .lt-title{font-family:var(--mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2)}
             .lt-title b{color:var(--accent)}
+            .lt-select{font-family:var(--mono);font-size:0.72rem;letter-spacing:0.08em;color:var(--accent);background:var(--bg-2,var(--surface));border:1px solid var(--border);border-radius:2px;padding:0.15rem 0.4rem;cursor:pointer;max-width:220px}
+            .lt-select:focus{outline:none;border-color:var(--accent)}
             .lt-live{font-family:var(--mono);font-size:0.6rem;letter-spacing:0.15em;color:var(--text-dim);display:flex;align-items:center;gap:0.4rem}
             .lt-live .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:ltPulse 1.8s infinite}
             @keyframes ltPulse{0%,100%{opacity:1}50%{opacity:0.3}}
@@ -377,7 +379,9 @@
           </style>
           <div class="lt-panel" id="ltPanel" data-shipment="ship-001">
             <div class="lt-head">
-              <div class="lt-title">// LIVE TELEMETRY — <b id="ltShipment">ship-001</b></div>
+              <div class="lt-title">// LIVE TELEMETRY —
+                <select id="ltShipmentSelect" class="lt-select" title="Choose a shipment"></select>
+              </div>
               <div class="lt-live"><span class="dot"></span><span id="ltStatus">POLLING…</span></div>
             </div>
             <div class="lt-stats">
@@ -393,7 +397,7 @@
             <div class="lt-empty" id="ltEmpty">Waiting for the first reading from <b>/api/ingest</b>…</div>
             <div class="lt-tablewrap" id="ltTableWrap" style="display:none">
               <table class="lt-table">
-                <thead><tr><th>Device time</th><th>Temp °F</th><th>Proof</th><th>Received</th></tr></thead>
+                <thead><tr><th>Device time</th><th>Temp °C</th><th>Proof</th><th>Received</th></tr></thead>
                 <tbody id="ltRows"></tbody>
               </table>
             </div>
@@ -403,11 +407,43 @@
             (function () {
               var panel = document.getElementById("ltPanel");
               if (!panel) return;
-              var SHIPMENT = panel.getAttribute("data-shipment") || "ship-001";
               var POLL_MS = 7000;
+              var POLL_MS_SHIPMENTS = 30000; // refresh the shipment list less often
+              // Shipment to show: ?shipment= in the URL wins and pins the choice;
+              // otherwise we auto-follow the most-active shipment until the user
+              // picks one from the dropdown.
+              var urlShip = new URLSearchParams(location.search).get("shipment");
+              var SHIPMENT = urlShip || panel.getAttribute("data-shipment") || "ship-001";
+              var pinned = !!urlShip; // true once locked to an explicit choice
 
               var el = function (id) { return document.getElementById(id); };
-              document.getElementById("ltShipment").textContent = SHIPMENT;
+              var select = el("ltShipmentSelect");
+
+              // Populate the dropdown from /api/shipments (ordered by recent activity).
+              async function loadShipments() {
+                var apiIds = [];
+                try {
+                  var res = await fetch("/api/shipments", { cache: "no-store" });
+                  var data = await res.json();
+                  if (data && data.ok) apiIds = data.shipments.map(function (s) { return s.shipment_id; });
+                } catch (e) { /* keep whatever we have */ }
+                // Not pinned → follow the most-active shipment so the panel isn't empty.
+                if (!pinned && apiIds.length) SHIPMENT = apiIds[0];
+                var ids = apiIds.slice();
+                if (SHIPMENT && ids.indexOf(SHIPMENT) === -1) ids.unshift(SHIPMENT);
+                if (!ids.length) ids = [SHIPMENT];
+                select.innerHTML = ids.map(function (id) {
+                  return '<option value="' + id + '"' + (id === SHIPMENT ? " selected" : "") + ">" + id + "</option>";
+                }).join("");
+                select.value = SHIPMENT;
+              }
+
+              select.addEventListener("change", function () {
+                pinned = true;         // user made an explicit choice — stop auto-following
+                SHIPMENT = select.value;
+                render([]);            // clear stale rows immediately
+                poll();                // fetch the newly selected shipment now
+              });
 
               function fmtTime(s) {
                 if (!s) return "—";
@@ -419,7 +455,7 @@
               function drawChart(readingsAsc) {
                 var svg = el("ltChart");
                 var W = 600, H = 180, pad = 8;
-                var temps = readingsAsc.map(function (r) { return r.temp_f; })
+                var temps = readingsAsc.map(function (r) { return r.temp_c; })
                                        .filter(function (t) { return typeof t === "number"; });
                 if (temps.length < 2) { el("ltChartWrap").style.display = "none"; return; }
                 el("ltChartWrap").style.display = "block";
@@ -428,12 +464,12 @@
                 var n = readingsAsc.length;
                 var x = function (i) { return pad + (i / (n - 1)) * (W - 2 * pad); };
                 var y = function (t) { return H - pad - ((t - min) / (max - min)) * (H - 2 * pad); };
-                var pts = readingsAsc.map(function (r, i) { return x(i) + "," + y(r.temp_f); }).join(" ");
+                var pts = readingsAsc.map(function (r, i) { return x(i) + "," + y(r.temp_c); }).join(" ");
                 var last = readingsAsc[n - 1];
                 svg.innerHTML =
                   '<polyline fill="none" stroke="var(--accent)" stroke-width="2" ' +
                     'vector-effect="non-scaling-stroke" points="' + pts + '"/>' +
-                  '<circle cx="' + x(n - 1) + '" cy="' + y(last.temp_f) + '" r="3.5" fill="var(--accent)"/>';
+                  '<circle cx="' + x(n - 1) + '" cy="' + y(last.temp_c) + '" r="3.5" fill="var(--accent)"/>';
               }
 
               function render(readings) {
@@ -442,8 +478,8 @@
                 var latest = readings[0];
 
                 el("ltDevice").textContent = (latest && latest.device_id) || "—";
-                el("ltTemp").textContent = latest && typeof latest.temp_f === "number"
-                  ? latest.temp_f.toFixed(1) + "°F" : "—";
+                el("ltTemp").textContent = latest && typeof latest.temp_c === "number"
+                  ? latest.temp_c.toFixed(1) + "°C" : "—";
                 el("ltSeen").textContent = latest ? fmtTime(latest.timestamp || latest.received_at) : "—";
                 el("ltProof").textContent = latest && latest.proof_count != null ? latest.proof_count : "—";
                 el("ltCount").textContent = readings.length;
@@ -459,7 +495,7 @@
 
                 var rows = readings.slice(0, 50).map(function (r) {
                   return "<tr><td>" + fmtTime(r.timestamp) + "</td>" +
-                    '<td class="temp">' + (typeof r.temp_f === "number" ? r.temp_f.toFixed(1) : "—") + "</td>" +
+                    '<td class="temp">' + (typeof r.temp_c === "number" ? r.temp_c.toFixed(1) : "—") + "</td>" +
                     "<td>" + (r.proof_count != null ? r.proof_count : "—") + "</td>" +
                     "<td>" + fmtTime(r.received_at) + "</td></tr>";
                 }).join("");
@@ -481,8 +517,10 @@
                   el("ltStatus").textContent = "OFFLINE";
                 }
               }
-              poll();
+              // First pick the shipment (auto-follow most active), then poll it.
+              loadShipments().then(poll);
               setInterval(poll, POLL_MS);
+              setInterval(loadShipments, POLL_MS_SHIPMENTS);
             })();
           </script>
         </div>

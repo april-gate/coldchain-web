@@ -56,7 +56,7 @@ curl -X POST localhost:8788/loi -H 'content-type: application/json' \
 
 # Ingest: 401 without the key, stored with it
 curl -X POST localhost:8788/api/ingest -H 'X-Ingest-Key: test-ingest-key' -H 'content-type: application/json' \
-  -d '{"v":1,"device_id":"test-01","shipment_id":"ship-001","proof_count":42,"timestamp":"2026-07-25T14:32:05Z","temp_f":71.6}'
+  -d '{"v":1,"device_id":"test-01","shipment_id":"ship-001","proof_count":42,"timestamp":"2026-07-25T14:32:05Z","temp_c":4.5}'
 curl 'localhost:8788/api/readings?shipment_id=ship-001'
 
 # Dashboard: open http://localhost:8788/dashboard.html → "LIVE TELEMETRY" panel

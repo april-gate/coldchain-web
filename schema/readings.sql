@@ -9,10 +9,13 @@ CREATE TABLE IF NOT EXISTS readings (
   device_id    TEXT,
   proof_count  INTEGER,
   timestamp    TEXT,                          -- device-reported ISO-8601 time
-  temp_f       REAL,
+  temp_c       REAL,                          -- degrees Celsius (native sensor unit)
   received_at  TEXT NOT NULL DEFAULT (datetime('now')),
   source_ip    TEXT
 );
 
 -- Fast "recent readings for a shipment, newest first".
 CREATE INDEX IF NOT EXISTS idx_readings_shipment ON readings (shipment_id, id);
+
+-- Migration for a `readings` table created with the old temp_f column:
+--   ALTER TABLE readings RENAME COLUMN temp_f TO temp_c;

@@ -10,7 +10,10 @@
  *   secret      INGEST_KEY   -> must match the X-Ingest-Key request header
  *
  * Body: { "v":1, "device_id":"test-01", "shipment_id":"ship-001",
- *         "proof_count":42, "timestamp":"2026-07-24T14:32:05Z", "temp_f":71.6 }
+ *         "proof_count":42, "timestamp":"2026-07-24T14:32:05Z", "temp_c":4.5 }
+ *
+ * temp_c is degrees Celsius (the DS18B20's native unit). `temp` is accepted as
+ * an alias for temp_c.
  */
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -45,9 +48,10 @@ export async function onRequestPost({ request, env }) {
   if (!shipmentId) {
     return json({ ok: false, error: "shipment_id is required." }, 400);
   }
-  const tempF = num(data.temp_f);
-  if (tempF === null) {
-    return json({ ok: false, error: "temp_f must be a number." }, 400);
+  // Celsius (native sensor unit). Accept `temp` as an alias; 0 °C stays valid.
+  const tempC = num(data.temp_c) ?? num(data.temp);
+  if (tempC === null) {
+    return json({ ok: false, error: "temp_c must be a number." }, 400);
   }
 
   const row = {
@@ -55,7 +59,7 @@ export async function onRequestPost({ request, env }) {
     device_id:   str(data.device_id, 120),
     proof_count: int(data.proof_count),
     timestamp:   str(data.timestamp, 40),
-    temp_f:      tempF,
+    temp_c:      tempC,
     source_ip:   request.headers.get("CF-Connecting-IP") || "",
   };
 
@@ -67,10 +71,10 @@ export async function onRequestPost({ request, env }) {
   try {
     await env.WAITLIST_DB.prepare(
       `INSERT INTO readings
-         (shipment_id, device_id, proof_count, timestamp, temp_f, received_at, source_ip)
+         (shipment_id, device_id, proof_count, timestamp, temp_c, received_at, source_ip)
        VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
     )
-      .bind(row.shipment_id, row.device_id, row.proof_count, row.timestamp, row.temp_f, row.source_ip)
+      .bind(row.shipment_id, row.device_id, row.proof_count, row.timestamp, row.temp_c, row.source_ip)
       .run();
   } catch (err) {
     console.error("D1 insert (readings) failed:", err && err.message);
