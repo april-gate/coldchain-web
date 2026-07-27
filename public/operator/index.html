@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-default="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — Operator Portal</title>
+  <meta name="description" content="Manage your cold-chain shipments." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --mono:'Share Tech Mono',monospace; --display:'Bebas Neue',sans-serif; --body:'DM Sans',sans-serif; }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:var(--body); font-weight:300; line-height:1.7; }
+    .container { max-width:1100px; margin:0 auto; padding:0 2rem; position:relative; z-index:1; }
+
+    /* NAV (shared structure — matches the site) */
+    nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:1.2rem 2rem; display:flex; align-items:center; justify-content:space-between; background:var(--nav-bg); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+    .nav-logo { font-family:var(--mono); font-size:0.85rem; color:var(--accent); letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; }
+    .nav-logo span { color:var(--text-dim); margin:0 0.5rem; }
+    .nav-mid { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+    .nav-tag { font-family:var(--mono); font-size:0.7rem; color:var(--nav-fg); letter-spacing:0.1em; border:1px solid var(--border); padding:0.3rem 0.8rem; border-radius:2px; text-decoration:none; transition:color 0.2s,border-color 0.2s; }
+    .nav-tag:hover { color:var(--accent); border-color:var(--accent); }
+    .nav-tag.active { color:var(--accent); border-color:var(--accent); }
+    .nav-cta { font-family:var(--mono); font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; background:var(--accent); color:var(--bg); border:1px solid var(--accent); padding:0.42rem 1.05rem; border-radius:2px; text-decoration:none; font-weight:500; }
+    /* disabled Sign In — non-clickable, no pointer */
+    .btn-signin { font-family:var(--mono); font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); background:transparent; border:1px solid var(--border); padding:0.3rem 0.9rem; border-radius:2px; opacity:0.5; cursor:not-allowed; pointer-events:auto; }
+
+    /* PAGE */
+    main { padding:8rem 0 4rem; position:relative; z-index:1; }
+    .page-head { display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1.5rem; margin-bottom:2.5rem; }
+    h1 { font-family:var(--display); font-size:clamp(2.5rem,5vw,3.5rem); color:var(--text-bright); letter-spacing:0.02em; line-height:1; }
+    .subtitle { font-family:var(--mono); font-size:0.8rem; color:var(--text-dim); letter-spacing:0.1em; margin-top:0.6rem; }
+    .btn-primary { display:inline-flex; align-items:center; gap:0.5rem; background:var(--accent); color:var(--bg); font-family:var(--mono); font-size:0.8rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.85rem 1.75rem; text-decoration:none; border:none; cursor:pointer; transition:filter 0.2s,transform 0.2s; clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%); }
+    .btn-primary:hover { filter:brightness(1.06); transform:translateY(-1px); }
+    .head-actions { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+    .btn-secondary { display:inline-flex; align-items:center; gap:0.5rem; background:transparent; color:var(--text); font-family:var(--mono); font-size:0.8rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.85rem 1.5rem; text-decoration:none; border:1px solid var(--border); cursor:pointer; transition:border-color 0.2s,color 0.2s; }
+    .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* LIST */
+    .ship-list { display:flex; flex-direction:column; gap:1rem; }
+    .ship-card { display:grid; grid-template-columns:1.4fr repeat(4,1fr) auto; gap:1rem; align-items:center; background:var(--surface); border:1px solid var(--border); padding:1.25rem 1.5rem; transition:border-color 0.2s; }
+    .ship-card:hover { border-color:var(--accent); }
+    .sc-name { font-family:var(--display); font-size:1.5rem; color:var(--text-bright); letter-spacing:0.02em; line-height:1; }
+    .sc-sub { font-family:var(--mono); font-size:0.62rem; color:var(--text-dim); letter-spacing:0.08em; margin-top:0.4rem; display:flex; align-items:center; gap:0.4rem; }
+    .sc-k { font-family:var(--mono); font-size:0.58rem; color:var(--text-dim); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:0.25rem; }
+    .sc-v { font-family:var(--mono); font-size:0.82rem; color:var(--text); }
+    .tier-badge { display:inline-block; font-family:var(--mono); font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.2rem 0.55rem; border-radius:2px; border:1px solid; }
+    .tier-Essential { color:var(--ink-3); border-color:var(--border-2); }
+    .tier-Assured   { color:var(--accent); border-color:var(--accent); }
+    .tier-Fortified { color:var(--gold); border-color:var(--gold); }
+    .copy-btn { font-family:var(--mono); font-size:0.6rem; background:transparent; border:1px solid var(--border); color:var(--text-dim); padding:0.1rem 0.4rem; cursor:pointer; border-radius:2px; }
+    .copy-btn:hover { color:var(--accent); border-color:var(--accent); }
+    .view-link { font-family:var(--mono); font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); text-decoration:none; border:1px solid var(--accent); padding:0.4rem 0.9rem; border-radius:2px; }
+    .view-link:hover { background:var(--accent-dim); }
+
+    .empty { text-align:center; padding:4rem 2rem; border:1px dashed var(--border); background:var(--surface); }
+    .empty p { font-family:var(--mono); font-size:0.85rem; color:var(--text-dim); letter-spacing:0.05em; margin-bottom:1.75rem; }
+    .status-line { font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); letter-spacing:0.08em; margin-bottom:1.25rem; }
+
+    @media (max-width:820px) {
+      .ship-card { grid-template-columns:1fr 1fr; }
+      .nav-mid .nav-tag { display:none; }
+    }
+  </style>
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-logo">APRIL<span>//</span>GATE</a>
+    <div class="nav-mid">
+      <a href="/how-it-works.html" class="nav-tag">Legal &amp; Compliance</a>
+      <a href="/verify.html" class="nav-tag">Verify</a>
+      <a href="/team.html" class="nav-tag">Team</a>
+      <a href="/waitlist.html" class="nav-cta">★ Waitlist</a>
+      <a href="/operator/" class="nav-tag active">Operator Portal</a>
+      <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
+      <button class="btn-signin" type="button" disabled title="Auth coming soon — demo runs unauthenticated" aria-disabled="true">Sign In</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <div class="page-head">
+        <div>
+          <h1>Operator Portal</h1>
+          <div class="subtitle">Manage your cold-chain shipments.</div>
+        </div>
+        <div class="head-actions">
+          <a href="/dashboard.html" class="btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </a>
+          <a href="/operator/new-shipment.html" class="btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New Shipment
+          </a>
+        </div>
+      </div>
+
+      <div class="status-line" id="statusLine">Loading shipments…</div>
+      <div class="ship-list" id="shipList"></div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var listEl = document.getElementById("shipList");
+      var statusEl = document.getElementById("statusLine");
+
+      function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+      function trunc(id){ return id.length>16 ? id.slice(0,6)+"…"+id.slice(-6) : id; }
+      function fmtDate(s){ if(!s) return "—"; var d=new Date(s.replace(" ","T")+"Z"); return isNaN(d)?s:d.toLocaleDateString([], {year:"numeric",month:"short",day:"numeric"}); }
+      function tempRange(a,b){ return (a==null&&b==null)?"—":(a+"–"+b+" °C"); }
+
+      window.copyId = function(btn, id){
+        navigator.clipboard.writeText(id).then(function(){ var t=btn.textContent; btn.textContent="✓"; setTimeout(function(){btn.textContent=t;},1200); });
+      };
+
+      function card(s){
+        return '<div class="ship-card">' +
+          '<div><div class="sc-name">'+esc(s.name)+'</div>' +
+            '<div class="sc-sub"><span title="'+esc(s.shipment_id)+'">'+esc(trunc(s.shipment_id))+'</span>' +
+            '<button class="copy-btn" onclick="copyId(this,\''+esc(s.shipment_id)+'\')" title="Copy shipment ID">copy</button></div></div>' +
+          '<div><div class="sc-k">Tier</div><span class="tier-badge tier-'+esc(s.tier)+'">'+esc(s.tier)+'</span></div>' +
+          '<div><div class="sc-k">Temp range</div><div class="sc-v">'+esc(tempRange(s.temp_c_min,s.temp_c_max))+'</div></div>' +
+          '<div><div class="sc-k">Duration</div><div class="sc-v">'+esc(s.duration_days)+' d</div></div>' +
+          '<div><div class="sc-k">Devices</div><div class="sc-v">'+esc(s.num_devices)+'</div></div>' +
+          '<a class="view-link" href="/operator/shipment/'+encodeURIComponent(s.shipment_id)+'">View</a>' +
+        '</div>';
+      }
+
+      function emptyState(){
+        listEl.innerHTML = '<div class="empty"><p>No shipments yet. Create your first one.</p>' +
+          '<a href="/operator/new-shipment.html" class="btn-primary">New Shipment</a></div>';
+      }
+
+      fetch("/api/shipments/list", { cache:"no-store" })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (!d.ok) { statusEl.textContent = "Could not load shipments: " + (d.error||"unknown error"); return; }
+          if (!d.shipments.length) { statusEl.textContent=""; emptyState(); return; }
+          statusEl.textContent = d.count + " shipment" + (d.count===1?"":"s");
+          listEl.innerHTML = d.shipments.map(card).join("");
+        })
+        .catch(function(e){ statusEl.textContent = "Could not load shipments (network)."; });
+    })();
+  </script>
+</body>
+</html>

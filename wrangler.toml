@@ -8,6 +8,11 @@
 name = "aprilgate"
 pages_build_output_dir = "public"
 
+# @solana/web3.js (used by the create-shipment Worker route) relies on Node's
+# Buffer, so enable nodejs_compat. Keep the date recent enough for the flag.
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
 # One D1 database (binding WAITLIST_DB) holds every app table:
 #   signups   (schema.sql)          — waitlist
 #   loi + loi_tokens (schema/loi.sql) — Letters of Intent + magic-link tokens
