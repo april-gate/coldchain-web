@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-default="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — New Shipment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --mono:'Share Tech Mono',monospace; --display:'Bebas Neue',sans-serif; --body:'DM Sans',sans-serif; }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:var(--body); font-weight:300; line-height:1.7; }
+    .container { max-width:760px; margin:0 auto; padding:0 2rem; position:relative; z-index:1; }
+
+    nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:1.2rem 2rem; display:flex; align-items:center; justify-content:space-between; background:var(--nav-bg); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+    .nav-logo { font-family:var(--mono); font-size:0.85rem; color:var(--accent); letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; }
+    .nav-logo span { color:var(--text-dim); margin:0 0.5rem; }
+    .nav-mid { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+    .nav-tag { font-family:var(--mono); font-size:0.7rem; color:var(--nav-fg); letter-spacing:0.1em; border:1px solid var(--border); padding:0.3rem 0.8rem; border-radius:2px; text-decoration:none; }
+    .nav-tag:hover,.nav-tag.active { color:var(--accent); border-color:var(--accent); }
+    .nav-cta { font-family:var(--mono); font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; background:var(--accent); color:var(--bg); border:1px solid var(--accent); padding:0.42rem 1.05rem; border-radius:2px; text-decoration:none; font-weight:500; }
+    .btn-signin { font-family:var(--mono); font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); background:transparent; border:1px solid var(--border); padding:0.3rem 0.9rem; border-radius:2px; opacity:0.5; cursor:not-allowed; }
+
+    main { padding:8rem 0 4rem; }
+    .crumb { font-family:var(--mono); font-size:0.7rem; color:var(--text-dim); letter-spacing:0.1em; margin-bottom:1rem; }
+    .crumb a { color:var(--accent); text-decoration:none; }
+    h1 { font-family:var(--display); font-size:clamp(2.2rem,4vw,3rem); color:var(--text-bright); letter-spacing:0.02em; line-height:1; margin-bottom:2rem; }
+
+    .field { margin-bottom:1.4rem; }
+    .field label { display:block; font-family:var(--mono); font-size:0.68rem; color:var(--text2); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:0.45rem; }
+    .field label .req { color:var(--accent); }
+    .field label .opt { color:var(--text-dim); text-transform:none; letter-spacing:0.05em; }
+    .field input, .field select, .field textarea { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text-bright); font-family:var(--body); font-size:0.95rem; padding:0.7rem 0.85rem; border-radius:2px; }
+    .field select { font-family:var(--mono); font-size:0.85rem; cursor:pointer; }
+    .field textarea { resize:vertical; min-height:4.5rem; font-weight:300; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-dim); }
+    .helper { font-family:var(--mono); font-size:0.66rem; color:var(--text-dim); letter-spacing:0.04em; margin-top:0.35rem; }
+    .field-error { display:none; font-family:var(--mono); font-size:0.66rem; color:var(--danger); margin-top:0.35rem; }
+    .field.has-error .field-error { display:block; }
+    .field.has-error input, .field.has-error select { border-color:var(--danger); }
+
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .tier-help { font-family:var(--mono); font-size:0.66rem; color:var(--text-dim); letter-spacing:0.04em; margin-top:0.4rem; line-height:1.5; }
+    #customTemp { margin-top:0.75rem; }
+    #customTemp.hidden { display:none; }
+
+    .submit-btn { display:inline-flex; align-items:center; justify-content:center; gap:0.5rem; background:var(--accent); color:var(--bg); font-family:var(--mono); font-size:0.82rem; letter-spacing:0.14em; text-transform:uppercase; padding:0.95rem 2.5rem; border:none; cursor:pointer; margin-top:0.5rem; clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%); }
+    .submit-btn:disabled { opacity:0.6; cursor:wait; }
+    .form-toperror { display:none; font-family:var(--mono); font-size:0.72rem; color:var(--danger); background:var(--danger-bg); border:1px solid var(--danger); padding:0.75rem 1rem; border-radius:2px; margin-bottom:1.4rem; }
+    .form-toperror.show { display:block; }
+
+    @media (max-width:820px){ .nav-mid .nav-tag{display:none;} .two-col{grid-template-columns:1fr;} }
+  </style>
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-logo">APRIL<span>//</span>GATE</a>
+    <div class="nav-mid">
+      <a href="/how-it-works.html" class="nav-tag">Legal &amp; Compliance</a>
+      <a href="/verify.html" class="nav-tag">Verify</a>
+      <a href="/team.html" class="nav-tag">Team</a>
+      <a href="/waitlist.html" class="nav-cta">★ Waitlist</a>
+      <a href="/operator/" class="nav-tag active">Operator Portal</a>
+      <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
+      <button class="btn-signin" type="button" disabled title="Auth coming soon — demo runs unauthenticated" aria-disabled="true">Sign In</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <div class="crumb"><a href="/operator/">← Operator Portal</a></div>
+      <h1>New Shipment</h1>
+
+      <div class="form-toperror" id="topError" role="alert"></div>
+
+      <form id="shipForm" novalidate>
+        <div class="field">
+          <label for="name">Shipment name <span class="req">*</span></label>
+          <input type="text" id="name" maxlength="100" placeholder="e.g., Insulin batch #4471 — BOS→DEN" required />
+          <span class="field-error" id="err-name">Please enter a shipment name.</span>
+        </div>
+
+        <div class="field">
+          <label for="tier">Tier <span class="req">*</span></label>
+          <select id="tier">
+            <option value="Essential">Essential</option>
+            <option value="Assured" selected>Assured</option>
+            <option value="Fortified">Fortified</option>
+          </select>
+          <div class="tier-help" id="tierHelp"></div>
+        </div>
+
+        <div class="field">
+          <label for="tempPreset">Temperature range <span class="req">*</span></label>
+          <select id="tempPreset">
+            <option value="frozen">Frozen (−20 °C) · −25 to −15</option>
+            <option value="refrigerated" selected>Refrigerated (2–8 °C)</option>
+            <option value="cool">Cool (8–15 °C)</option>
+            <option value="ambient">Ambient (15–25 °C)</option>
+            <option value="custom">Custom…</option>
+          </select>
+          <div class="two-col hidden" id="customTemp">
+            <div><label for="tempMin" style="margin-top:0.5rem">Min °C</label><input type="number" id="tempMin" step="0.1" placeholder="min" /></div>
+            <div><label for="tempMax" style="margin-top:0.5rem">Max °C</label><input type="number" id="tempMax" step="0.1" placeholder="max" /></div>
+          </div>
+          <span class="field-error" id="err-temp">Enter a valid min/max (min ≤ max).</span>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="numDevices">Number of devices <span class="req">*</span></label>
+            <input type="number" id="numDevices" min="4" value="4" />
+            <div class="helper" id="devHelper">Recommended: 4</div>
+            <span class="field-error" id="err-devices">Assured and Fortified tiers require a minimum of 4 devices.</span>
+          </div>
+          <div class="field">
+            <label for="duration">Duration in days <span class="req">*</span></label>
+            <input type="number" id="duration" min="1" value="5" />
+            <span class="field-error" id="err-duration">Duration must be at least 1 day.</span>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <label for="origin">Origin <span class="opt">(optional)</span></label>
+            <input type="text" id="origin" placeholder="e.g., Boston distribution center" />
+          </div>
+          <div class="field">
+            <label for="destination">Destination <span class="opt">(optional)</span></label>
+            <input type="text" id="destination" placeholder="e.g., Denver hospital pharmacy" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="notes">Notes <span class="opt">(optional)</span></label>
+          <textarea id="notes" rows="3" placeholder="Cargo description, special handling, container details, contacts, anything else."></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Create Shipment</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var TIER_MIN = { Essential:1, Assured:4, Fortified:4 };
+      var TIER_TIP = {
+        Essential:"Single-device attestation. Cheapest tier. Suitable for low-value shipments.",
+        Assured:"4-device deployment. Standard tier for pharma / high-value cargo.",
+        Fortified:"4-device ruggedized deployment. Cellular/satellite backup. For critical shipments."
+      };
+      var PRESETS = {
+        frozen:{min:-25,max:-15}, refrigerated:{min:2,max:8}, cool:{min:8,max:15}, ambient:{min:15,max:25}
+      };
+
+      var el = function(id){ return document.getElementById(id); };
+      var tier = el("tier"), tempPreset = el("tempPreset"), customTemp = el("customTemp"),
+          numDevices = el("numDevices"), devHelper = el("devHelper"), tierHelp = el("tierHelp"),
+          form = el("shipForm"), submitBtn = el("submitBtn"), topError = el("topError");
+
+      function setError(id, on){ el(id).closest(".field").classList.toggle("has-error", !!on); }
+
+      function onTierChange(){
+        var min = TIER_MIN[tier.value];
+        numDevices.min = min;
+        // bump default/current up to the tier minimum
+        if (!numDevices.value || parseInt(numDevices.value,10) < min) numDevices.value = min;
+        devHelper.textContent = "Recommended: " + min;
+        tierHelp.textContent = TIER_TIP[tier.value];
+      }
+      function onPresetChange(){
+        customTemp.classList.toggle("hidden", tempPreset.value !== "custom");
+      }
+      tier.addEventListener("change", onTierChange);
+      tempPreset.addEventListener("change", onPresetChange);
+      onTierChange(); onPresetChange();
+
+      function resolveTemp(){
+        if (tempPreset.value === "custom") {
+          var mn = parseFloat(el("tempMin").value), mx = parseFloat(el("tempMax").value);
+          if (Number.isNaN(mn) || Number.isNaN(mx) || mn > mx) return null;
+          return { min:mn, max:mx };
+        }
+        return PRESETS[tempPreset.value];
+      }
+
+      form.addEventListener("submit", async function(e){
+        e.preventDefault();
+        topError.classList.remove("show");
+        var ok = true;
+
+        var name = el("name").value.trim();
+        setError("name", !name); if (!name) ok = false;
+
+        var temp = resolveTemp();
+        document.getElementById("err-temp").closest(".field").classList.toggle("has-error", !temp);
+        if (!temp) ok = false;
+
+        var nd = parseInt(numDevices.value,10);
+        var badDevices = !Number.isInteger(nd) || nd < TIER_MIN[tier.value];
+        setError("numDevices", badDevices); if (badDevices) ok = false;
+
+        var dur = parseInt(el("duration").value,10);
+        var badDur = !Number.isInteger(dur) || dur < 1;
+        setError("duration", badDur); if (badDur) ok = false;
+
+        if (!ok) return;
+
+        var payload = {
+          name: name, tier: tier.value,
+          temp_c_min: temp.min, temp_c_max: temp.max,
+          num_devices: nd, duration_days: dur,
+          origin: el("origin").value.trim(),
+          destination: el("destination").value.trim(),
+          notes: el("notes").value.trim()
+        };
+
+        submitBtn.disabled = true; var orig = submitBtn.textContent;
+        submitBtn.textContent = "Creating on devnet…";
+        try {
+          var res = await fetch("/api/shipments/create", {
+            method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
+          });
+          var data = await res.json();
+          if (!res.ok || !data.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
+          // success → detail page with a banner
+          window.location.href = "/operator/shipment/" + encodeURIComponent(data.shipment_id) + "?created=1";
+        } catch (err) {
+          submitBtn.disabled = false; submitBtn.textContent = orig;
+          topError.textContent = "Could not create shipment: " + err.message;
+          topError.classList.add("show");
+          topError.scrollIntoView({ behavior:"smooth", block:"center" });
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

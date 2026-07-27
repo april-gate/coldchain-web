@@ -4,3 +4,7 @@
 # /waitlist.html → /waitlist, so redirecting to /waitlist.html would loop.
 /design-partner   /waitlist   302
 /early-access     /waitlist   302
+
+# NOTE: /operator/shipment/<id> and /verify/<id> are handled by Pages Functions
+# (functions/operator/shipment/[id].js, functions/verify/[id].js) — NOT by
+# static rewrites, which Pages' clean-URL handling would strip the id from.

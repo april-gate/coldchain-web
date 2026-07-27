@@ -712,10 +712,11 @@
       <a href="verify.html" class="nav-link active">Verify</a>
       <a href="how-it-works.html" class="nav-link">Legal &amp; Compliance</a>
       <a href="team.html" class="nav-link">Team</a>
-      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="/operator/" class="nav-link">Operator Portal</a>
       <a href="mailto:irina@aprilgatehq.com" class="nav-link">Contact</a>
       <a href="waitlist.html" class="nav-link nav-cta">★ Join the Waitlist</a>
       <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
+      <button type="button" disabled title="Auth coming soon — demo runs unauthenticated" aria-disabled="true" style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);background:transparent;border:1px solid var(--border);padding:0.3rem 0.9rem;border-radius:2px;opacity:0.5;cursor:not-allowed;">Sign In</button>
     </nav>
       <div class="thermo thermo--attached" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
   </header>
@@ -951,7 +952,7 @@
     <div class="container">
       <div class="footer-inner">
         <div style="display:flex;gap:1.5rem;align-items:center;">
-          <a href="dashboard.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">DASHBOARD</a>
+          <a href="/operator/" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">OPERATOR PORTAL</a>
           <a href="how-it-works.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">LEGAL &amp; COMPLIANCE</a>
           <a href="sources.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">SOURCES &amp; REFERENCES</a>
           <a href="mailto:irina@aprilgatehq.com" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">CONTACT</a>
@@ -970,10 +971,15 @@
     const EXPLORER = (addr) => `https://explorer.solana.com/address/${addr}?cluster=devnet`;
     const short = (h) => (h && h.length > 20 ? `${h.slice(0, 16)}…${h.slice(-4)}` : (h || '—'));
 
-    // Pre-fill from URL param: aprilgatehq.com/verify?shipment=<PDA>
+    // Pre-fill from URL: aprilgatehq.com/verify?shipment=<PDA>  OR  /verify/<PDA>
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
-      const shipment = params.get('shipment') || params.get('tx');
+      let shipment = params.get('shipment') || params.get('tx');
+      if (!shipment) {
+        // path form /verify/<shipment_id> (served by functions/verify/[id].js)
+        const m = window.location.pathname.match(/^\/verify\/(.+?)\/?$/);
+        if (m) shipment = decodeURIComponent(m[1]);
+      }
       if (shipment) {
         document.getElementById('verifyInput').value = shipment;
         verify();
