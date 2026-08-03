@@ -693,60 +693,263 @@
 
   
 
+
+    /* ══════════════════════════════════════════════════════════════════════
+       VERIFY — court-document treatment.
+
+       This is the page an insurer, a lawyer, or a judge lands on, so it is
+       deliberately monochrome: paper and ink, heavy rules, nothing decorative
+       competing with the evidence. The ONE exception to black-and-white is a
+       failed verdict — a TAMPERED result must not be something a reader can
+       skim past, so it keeps a red. Everything else earns emphasis through
+       weight and scale rather than hue.
+       ══════════════════════════════════════════════════════════════════════ */
+    [data-page="verify"] {
+      --paper:#f5f4f1; --ink-max:#0b0b0b; --rule:#0b0b0b;
+      --paper-2:#ffffff; --ink-soft:#4a4a4a; --ink-faint:#7d7d7d;
+      /* Remap the shared theme tokens too, so every pre-existing class on this
+         page turns monochrome rather than leaving the nav and the sections
+         below the sheet in slate-blue. Danger keeps its red on purpose. */
+      --bg:#f5f4f1; --bg-2:#ebeae6; --surface:#ffffff; --surface-2:#f0efec;
+      --border:#0b0b0b; --border-2:#0b0b0b;
+      --accent:#0b0b0b; --accent-2:#0b0b0b; --accent-dim:rgba(0,0,0,0.06);
+      --ink:#0b0b0b; --ink-2:#2f2f2f; --ink-3:#6a6a6a; --ink-dim:#8a8a8a;
+      --gold:#0b0b0b; --chain-color:#0b0b0b;
+      --nav-bg:rgba(245,244,241,0.92); --nav-fg:#2f2f2f;
+    }
+    html[data-page="verify"]:not([data-theme="light"]) {
+      --paper:#0b0b0b; --ink-max:#f5f4f1; --rule:#f5f4f1;
+      --paper-2:#141414; --ink-soft:#b8b8b8; --ink-faint:#8a8a8a;
+      --bg:#0b0b0b; --bg-2:#141414; --surface:#141414; --surface-2:#1c1c1c;
+      --border:#f5f4f1; --border-2:#f5f4f1;
+      --accent:#f5f4f1; --accent-2:#f5f4f1; --accent-dim:rgba(255,255,255,0.07);
+      --ink:#f5f4f1; --ink-2:#d2d2d2; --ink-3:#9a9a9a; --ink-dim:#7d7d7d;
+      --gold:#f5f4f1; --chain-color:#f5f4f1;
+      --nav-bg:rgba(11,11,11,0.92); --nav-fg:#d2d2d2;
+    }
+    [data-page="verify"] body { background:var(--paper); color:var(--ink-max); }
+    /* The mercury gradient is the one loud colour left; drain it on this page. */
+    [data-page="verify"] .thermo,
+    [data-page="verify"] .thermo * { filter:grayscale(1) contrast(1.35); }
+    /* The nav CTA is a filled block here, so it needs the inverse ink. */
+    /* Header shares the paper tone; a whiter strip reads as a different, cooler
+       material against the warm off-white body. */
+    [data-page="verify"] header { background:var(--paper); border-bottom:2px solid var(--rule); }
+    [data-page="verify"] .nav-cta { background:var(--ink-max); color:var(--paper); border-color:var(--ink-max); }
+    [data-page="verify"] .nav-link.active { border-bottom:2px solid var(--ink-max); }
+    /* The result grid painted its 1px gaps by showing the container background
+       through them. With ink-on-paper borders that turned the odd cell out into
+       a solid block of pure white. Rule the cells themselves instead, so an
+       unfilled slot is simply empty. */
+    [data-page="verify"] .result-grid {
+      background:transparent; gap:0; border:2px solid var(--rule);
+    }
+    [data-page="verify"] .result-cell {
+      background:transparent;
+      border-right:1px solid var(--rule); border-bottom:1px solid var(--rule);
+    }
+    [data-page="verify"] .result-cell:nth-child(2n) { border-right:none; }
+
+    /* Scales of justice, set as a watermark the way a seal sits on a document:
+       present, never competing with the text. */
+    .justice-mark {
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      display:flex; align-items:center; justify-content:center;
+      opacity:0.035; overflow:hidden;
+    }
+    .justice-mark svg { width:min(120vh,120vw); height:auto; color:var(--ink-max); }
+    @media (prefers-reduced-motion:no-preference) {
+      .justice-mark svg { animation:tip 14s ease-in-out infinite; transform-origin:50% 18%; }
+      @keyframes tip { 0%,100%{transform:rotate(-1.1deg)} 50%{transform:rotate(1.1deg)} }
+    }
+
+    /* ── Hero: the instruction is the headline ── */
+    [data-page="verify"] .hero { padding:3.5rem 2rem 2.25rem; }
+    .hero-kicker {
+      font-family:var(--mono); font-size:0.66rem; letter-spacing:0.32em;
+      text-transform:uppercase; color:var(--ink-faint);
+      display:flex; align-items:center; justify-content:center; gap:1rem; margin-bottom:1.4rem;
+    }
+    .hero-kicker::before, .hero-kicker::after {
+      content:''; display:block; width:3rem; height:2px; background:var(--rule);
+    }
+    .hero-statement {
+      font-family:var(--body); font-weight:500;
+      font-size:clamp(1.25rem,2.5vw,1.85rem); line-height:1.45;
+      color:var(--ink-max); max-width:900px; margin:0 auto; letter-spacing:-0.01em;
+    }
+    .hero-statement em { font-style:normal; font-weight:700; border-bottom:3px solid var(--rule); }
+    .hero-question {
+      font-family:var(--display); font-size:0.95rem; letter-spacing:0.18em;
+      text-transform:uppercase; color:var(--ink-faint); margin-top:1.5rem;
+    }
+
+    /* ── Fields: thick rules, unmissable labels ── */
+    .verify-sheet {
+      max-width:820px; margin:0 auto 4rem; position:relative; z-index:1;
+      background:var(--paper-2); border:3px solid var(--rule); padding:2.5rem 2.5rem 2rem;
+      box-shadow:10px 10px 0 var(--rule);
+    }
+    .field { margin-bottom:2.25rem; }
+    .field:last-of-type { margin-bottom:1.25rem; }
+    .field-label {
+      display:block; font-family:var(--display); font-weight:700;
+      font-size:clamp(1.35rem,3vw,1.9rem); line-height:1.1; letter-spacing:0.01em;
+      text-transform:uppercase; color:var(--ink-max); margin-bottom:0.3rem;
+    }
+    .field-hint {
+      font-size:0.92rem; color:var(--ink-soft); margin-bottom:0.85rem; line-height:1.5;
+    }
+    .input-major {
+      width:100%; display:block; border:3px solid var(--rule); background:var(--paper);
+      color:var(--ink-max); font-family:var(--mono); font-size:1rem; letter-spacing:0.04em;
+      padding:1rem 1.1rem; outline:none; border-radius:0;
+      transition:box-shadow .12s ease;
+    }
+    .input-major::placeholder { color:var(--ink-faint); }
+    .input-major:focus { box-shadow:inset 0 0 0 3px var(--rule); }
+    textarea.input-major { min-height:190px; resize:vertical; line-height:1.6; font-size:0.88rem; }
+
+    .field-actions { display:flex; gap:0.9rem; flex-wrap:wrap; margin-top:0.9rem; align-items:center; }
+    .btn-major {
+      font-family:var(--display); font-weight:700; font-size:1.05rem; letter-spacing:0.12em;
+      text-transform:uppercase; padding:0.75rem 2rem; cursor:pointer; border-radius:0;
+      border:3px solid var(--rule); background:var(--rule); color:var(--paper-2);
+      transition:transform .08s ease, box-shadow .08s ease;
+    }
+    .btn-major:hover:not(:disabled) { transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--rule); }
+    .btn-major:active:not(:disabled) { transform:translate(0,0); box-shadow:none; }
+    .btn-major:disabled { opacity:0.45; cursor:not-allowed; }
+    .btn-ghost { background:var(--paper-2); color:var(--ink-max); }
+
+    /* ── Manifest comparison ── */
+    .manifest-out { margin-top:1rem; font-family:var(--mono); font-size:0.78rem; }
+    .manifest-verdict {
+      display:inline-block; font-family:var(--display); font-weight:700; font-size:1.05rem;
+      letter-spacing:0.12em; text-transform:uppercase; padding:0.45rem 1rem; border:3px solid var(--rule);
+    }
+    .manifest-verdict.match { background:var(--rule); color:var(--paper-2); }
+    .manifest-verdict.nomatch { background:transparent; color:#c0271c; border-color:#c0271c; }
+    .manifest-rows { margin-top:0.9rem; }
+    .manifest-rows div { display:flex; justify-content:space-between; gap:1rem; padding:0.4rem 0;
+                         border-bottom:1px solid var(--rule); word-break:break-all; }
+    .manifest-rows span:first-child { color:var(--ink-faint); text-transform:uppercase; font-size:0.66rem; letter-spacing:0.12em; white-space:nowrap; }
+
+    /* ── Proof coverage ── */
+    .coverage { margin-top:1.6rem; border-top:3px solid var(--rule); padding-top:1.1rem; }
+    .coverage h3 {
+      font-family:var(--display); font-weight:700; font-size:1.15rem; letter-spacing:0.1em;
+      text-transform:uppercase; margin-bottom:0.2rem; color:var(--ink-max);
+    }
+    .coverage .why { font-size:0.86rem; color:var(--ink-soft); margin-bottom:0.9rem; }
+    .cov-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.9rem; }
+    .cov { border:2px solid var(--rule); padding:0.7rem 0.85rem; }
+    .cov .k { font-family:var(--mono); font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); }
+    .cov .v { font-family:var(--display); font-weight:700; font-size:1.35rem; line-height:1.25; color:var(--ink-max); }
+    .cov .v.flag { color:#c0271c; }
+    .cov .s { font-family:var(--mono); font-size:0.62rem; color:var(--ink-faint); }
+    .cov-bar { margin-top:1rem; height:16px; border:2px solid var(--rule); position:relative; overflow:hidden; }
+    .cov-bar i { position:absolute; top:0; bottom:0; background:var(--rule); }
+    .cov-bar-legend { display:flex; justify-content:space-between; font-family:var(--mono);
+                      font-size:0.6rem; color:var(--ink-faint); margin-top:0.3rem; letter-spacing:0.1em; }
+
+    @media (max-width:640px) {
+      .verify-sheet { padding:1.6rem 1.25rem; box-shadow:6px 6px 0 var(--rule); }
+      .btn-major { width:100%; }
+    }
   </style>
   <link rel="stylesheet" href="theme.css">
   <script src="theme.js"></script>
+  <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 <body>
 
   <!-- HEADER -->
   <header>
-    <a href="index.html" class="header-logo">
-      <div class="logo-mark">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      </div>
-      <div class="logo-text">April Gate</div>
+    <a href="/" class="header-logo">
+      <img src="/logo.png" alt="April Gate" style="height:34px;width:auto;display:block;border-radius:5px;" />
     </a>
     <nav class="header-nav">
-      <a href="index.html" class="nav-link">Home</a>
-      <a href="verify.html" class="nav-link active">Verify</a>
-      <a href="how-it-works.html" class="nav-link">Legal &amp; Compliance</a>
-      <a href="team.html" class="nav-link">Team</a>
+      <a href="/" class="nav-link">Home</a>
+      <a href="/verify" class="nav-link active">Verify</a>
+      <a href="/how-it-works.html" class="nav-link">Legal &amp; Compliance</a>
+      <a href="/team.html" class="nav-link">Team</a>
       <a href="/operator/" class="nav-link">Operator Portal</a>
       <a href="mailto:irina@aprilgatehq.com" class="nav-link">Contact</a>
-      <a href="waitlist.html" class="nav-link nav-cta">★ Join the Waitlist</a>
+      <a href="/waitlist.html" class="nav-link nav-cta">★ Join the Waitlist</a>
       <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
       <button type="button" disabled title="Auth coming soon — demo runs unauthenticated" aria-disabled="true" style="font-family:var(--mono);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);background:transparent;border:1px solid var(--border);padding:0.3rem 0.9rem;border-radius:2px;opacity:0.5;cursor:not-allowed;">Sign In</button>
     </nav>
       <div class="thermo thermo--attached" aria-hidden="true"><span class="thermo-bulb"></span><span class="thermo-line"></span></div>
   </header>
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-eyebrow">Shipment Verification</div>
-    <h1 class="hero-title">
-      Was this shipment<br><em>kept safe?</em>
-    </h1>
-    <p class="hero-subtitle">
-      Enter a shipment ID or transaction reference below. April Gate returns a simple, legally defensible answer — verified by mathematics, recorded permanently on blockchain.
-    </p>
+  <!-- Scales of justice: the page's seal, not its decoration. -->
+  <div class="justice-mark" aria-hidden="true">
+    <svg viewBox="0 0 200 160" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M100 18v112"/><path d="M70 132h60"/><path d="M58 40h84"/>
+      <circle cx="100" cy="30" r="6"/>
+      <path d="M58 40 38 82h40z"/><path d="M38 82a20 20 0 0 0 40 0"/>
+      <path d="M142 40l-20 42h40z"/><path d="M122 82a20 20 0 0 0 40 0"/>
+    </svg>
   </div>
 
-  <!-- VERIFY BOX -->
-  <div class="verify-box" style="position:relative;z-index:1;">
-    <div class="verify-label">// Enter Shipment ID or Blockchain Transaction Hash</div>
-    <div class="verify-input-row">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-kicker">Shipment Verification</div>
+    <p class="hero-statement">
+      Enter a shipment ID below. April Gate returns a simple, legally defensible
+      answer — <em>verified by mathematics, recorded permanently on blockchain.</em>
+    </p>
+    <div class="hero-question">Was this shipment kept safe?</div>
+  </div>
+
+  <!-- VERIFY SHEET -->
+  <div class="verify-sheet">
+
+    <div class="field">
+      <label class="field-label" for="verifyInput">Shipment ID</label>
+      <div class="field-hint">
+        The identifier printed on the shipment's QR code or paperwork.
+      </div>
       <input
-        class="verify-input"
+        class="input-major"
         id="verifyInput"
         type="text"
-        placeholder="e.g.  SHP-2026-0421  or  5KqPmN8x..."
+        autocapitalize="off" autocorrect="off" spellcheck="false"
+        placeholder="e.g.  EbSKKfH6qWe5ZzFpPys4cj9qyEoAb3jkxze5R7rbUvmq"
         onkeydown="if(event.key==='Enter') verify()"
       />
-      <button class="verify-btn" id="verifyBtn" onclick="verify()">VERIFY</button>
+      <div class="field-actions">
+        <button class="btn-major" id="verifyBtn" onclick="verify()">Verify</button>
+        <span class="field-hint" style="margin:0;">
+          No account required. Independently checkable on Solana.
+        </span>
+      </div>
     </div>
-    <div class="verify-hint">
-      No account required. Results are public and independently verifiable on the Solana blockchain.
+
+    <div class="field">
+      <label class="field-label" for="configInput">Shipment Configuration</label>
+      <div class="field-hint">
+        Obtain shipment configuration from the shipper and paste it here. April Gate
+        hashes it in your browser and compares that hash against the manifest
+        commitment the blockchain has held since the shipment was created. If the
+        shipper altered the terms afterwards, the two will not match.
+      </div>
+      <textarea
+        class="input-major"
+        id="configInput"
+        spellcheck="false"
+        placeholder='{"name":"...","tier":"...","temp_c_min":2,"temp_c_max":8,...}'
+      ></textarea>
+      <div class="field-actions">
+        <button class="btn-major btn-ghost" id="manifestBtn" onclick="checkManifest()" disabled
+                title="Enter a Shipment ID above and paste the configuration to enable">Get Manifest</button>
+        <span class="field-hint" id="manifestGate" style="margin:0;">
+          Needs both a Shipment ID and a pasted configuration.
+        </span>
+      </div>
+      <div class="manifest-out" id="manifestOut"></div>
     </div>
 
     <!-- RESULT -->
@@ -789,6 +992,20 @@
           <div class="result-cell-label">// Checked At</div>
           <div class="result-cell-value" id="rTime">—</div>
         </div>
+      </div>
+
+      <!-- Proof coverage: a count on its own says nothing about whether the
+           record covers the journey. This is where that gets answered. -->
+      <div class="coverage" id="coverage" style="display:none;">
+        <h3>Proof Coverage</h3>
+        <div class="why">
+          A proof count alone proves little. What matters is whether the proofs span
+          the shipment from creation to now, and whether any silent gap sits between
+          them — an unmonitored window is where an excursion hides.
+        </div>
+        <div class="cov-grid" id="covGrid"></div>
+        <div class="cov-bar" id="covBar"><i></i></div>
+        <div class="cov-bar-legend" id="covLegend"><span>—</span><span>—</span></div>
       </div>
 
       <div class="chain-proof-row">
@@ -953,8 +1170,8 @@
       <div class="footer-inner">
         <div style="display:flex;gap:1.5rem;align-items:center;">
           <a href="/operator/" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">OPERATOR PORTAL</a>
-          <a href="how-it-works.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">LEGAL &amp; COMPLIANCE</a>
-          <a href="sources.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">SOURCES &amp; REFERENCES</a>
+          <a href="/how-it-works.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">LEGAL &amp; COMPLIANCE</a>
+          <a href="/sources.html" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">SOURCES &amp; REFERENCES</a>
           <a href="mailto:irina@aprilgatehq.com" style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);letter-spacing:0.1em;text-decoration:none;">CONTACT</a>
         </div>
         <div class="footer-solana">
@@ -984,7 +1201,27 @@
         document.getElementById('verifyInput').value = shipment;
         verify();
       }
+      // Get Manifest needs BOTH a shipment to look up and text to hash, so it
+      // stays disabled until each is present. Wired here rather than inline so
+      // the programmatic prefill above is picked up too — assigning .value does
+      // not fire an input event.
+      ['verifyInput', 'configInput'].forEach((id) =>
+        document.getElementById(id).addEventListener('input', syncManifestGate));
+      syncManifestGate();
     });
+
+    function syncManifestGate() {
+      const hasId = document.getElementById('verifyInput').value.trim() !== '';
+      const hasCfg = document.getElementById('configInput').value.trim() !== '';
+      const ready = hasId && hasCfg;
+      document.getElementById('manifestBtn').disabled = !ready;
+      const gate = document.getElementById('manifestGate');
+      gate.style.display = ready ? 'none' : '';
+      gate.textContent = !hasId && !hasCfg
+        ? 'Needs both a Shipment ID and a pasted configuration.'
+        : (!hasId ? 'Enter the Shipment ID above.' : 'Paste the shipment configuration.');
+    }
+    window.syncManifestGate = syncManifestGate;
 
     async function verify() {
       const input = document.getElementById('verifyInput').value.trim();
@@ -1004,9 +1241,189 @@
 
       renderResult(verdict);
       btn.disabled = false;
-      btn.textContent = 'VERIFY';
+      btn.textContent = 'Verify';
+
+      // Coverage is a second, independent read — never let it break the verdict.
+      if (verdict.status !== 'ERROR') renderCoverage(input, verdict).catch(() => {});
     }
     window.verify = verify;
+
+    // ── Chain access (browser-side; browser IPs are not blocked by devnet) ──
+    const RPC = 'https://api.devnet.solana.com';
+    async function rpc(method, params) {
+      const r = await fetch(RPC, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+      });
+      const j = await r.json();
+      if (j.error) throw new Error(j.error.message || method + ' failed');
+      return j.result;
+    }
+    const b64Bytes = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const toHex = (u8) => Array.from(u8).map(b => b.toString(16).padStart(2, '0')).join('');
+    async function sha256Hex(str) {
+      const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return toHex(new Uint8Array(d));
+    }
+
+    /**
+     * The manifest commitment the program has held since create_shipment.
+     * Shipment layout: 8 disc + 32 authority + 32 nonce, so it starts at 72.
+     */
+    async function onChainManifest(pda) {
+      const info = await rpc('getAccountInfo', [pda, { encoding: 'base64' }]);
+      if (!info || !info.value) return null;
+      return toHex(b64Bytes(info.value.data[0]).slice(72, 104));
+    }
+
+    /**
+     * Compare the pasted configuration against the on-chain commitment.
+     *
+     * The commitment is SHA-256 over the exact manifest bytes the operator
+     * committed, so the comparison is byte-exact by design — that strictness is
+     * the point. But a shipper pasting from an email will pick up reformatting
+     * that changes bytes without changing meaning, so on a miss we retry once
+     * against a canonical re-serialisation (the field order create_shipment
+     * uses) and say plainly which form matched.
+     */
+    const MANIFEST_KEYS = ['name','tier','temp_c_min','temp_c_max','num_devices',
+                           'duration_days','origin','destination','notes'];
+    function canonicalise(text) {
+      let o;
+      try { o = JSON.parse(text); } catch { return null; }
+      if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+      const out = {};
+      for (const k of MANIFEST_KEYS) if (k in o) out[k] = o[k];
+      return Object.keys(out).length ? JSON.stringify(out) : null;
+    }
+
+    async function checkManifest() {
+      const out = document.getElementById('manifestOut');
+      const btn = document.getElementById('manifestBtn');
+      const pda = document.getElementById('verifyInput').value.trim();
+      const text = document.getElementById('configInput').value;
+
+      if (!pda) { out.innerHTML = '<div class="field-hint">Enter a Shipment ID first.</div>'; return; }
+      btn.disabled = true; btn.textContent = 'Reading chain…';
+      try {
+        const chainHex = await onChainManifest(pda);
+        if (!chainHex) {
+          out.innerHTML = '<div class="field-hint">No shipment account exists at that address on devnet.</div>';
+          return;
+        }
+        if (!text.trim()) {
+          out.innerHTML =
+            '<div class="manifest-rows"><div><span>On-chain manifest commitment</span>' +
+            '<span>' + chainHex + '</span></div></div>' +
+            '<div class="field-hint" style="margin-top:0.6rem;">' +
+            'Paste the shipper\'s configuration above to check it against this commitment.</div>';
+          return;
+        }
+
+        const rawHex = await sha256Hex(text);
+        let match = rawHex === chainHex, how = 'exact bytes', usedHex = rawHex;
+        if (!match) {
+          const canon = canonicalise(text);
+          if (canon) {
+            const canonHex = await sha256Hex(canon);
+            if (canonHex === chainHex) { match = true; how = 'canonical JSON form'; usedHex = canonHex; }
+          }
+        }
+
+        out.innerHTML =
+          '<div class="manifest-verdict ' + (match ? 'match' : 'nomatch') + '">' +
+            (match ? 'Configuration matches' : 'Configuration does NOT match') + '</div>' +
+          '<div class="manifest-rows">' +
+            '<div><span>On-chain commitment</span><span>' + chainHex + '</span></div>' +
+            '<div><span>Hash of pasted text</span><span>' + usedHex + '</span></div>' +
+            (match
+              ? '<div><span>Matched on</span><span>' + how + '</span></div>'
+              : '') +
+          '</div>' +
+          '<div class="field-hint" style="margin-top:0.7rem;">' +
+            (match
+              ? 'This configuration is the one committed to the blockchain when the shipment was created. It has not been altered since.'
+              : 'The pasted text does not hash to the commitment on the blockchain. Either it is not this shipment\'s configuration, it has been altered, or it was reformatted in transit — check for changed whitespace, field order, or missing fields before treating this as tampering.') +
+          '</div>';
+      } catch (e) {
+        out.innerHTML = '<div class="field-hint">Could not read the chain: ' + (e?.message || e) + '</div>';
+      } finally {
+        btn.textContent = 'Get Manifest';
+        syncManifestGate();   // re-gate, in case a field was cleared meanwhile
+      }
+    }
+    window.checkManifest = checkManifest;
+
+    /**
+     * Proof coverage. Every transaction touching the shipment PDA carries a
+     * blockTime, so the ledger itself tells us when the record starts, when it
+     * ends, and where the silences are. The largest gap is the number that
+     * matters: it is the longest window in which nothing was being attested.
+     */
+    const fmtDur = (s) => {
+      if (s == null) return '—';
+      if (s < 60) return Math.round(s) + 's';
+      if (s < 3600) return Math.round(s / 60) + 'm';
+      if (s < 86400) return (s / 3600).toFixed(1) + 'h';
+      return (s / 86400).toFixed(1) + 'd';
+    };
+
+    async function renderCoverage(pda, verdict) {
+      const box = document.getElementById('coverage');
+      const grid = document.getElementById('covGrid');
+
+      let sigs = [], before;
+      for (let page = 0; page < 10; page++) {
+        const batch = await rpc('getSignaturesForAddress', [pda, before ? { before, limit: 1000 } : { limit: 1000 }]);
+        if (!batch || !batch.length) break;
+        for (const s of batch) if (!s.err && s.blockTime) sigs.push(s.blockTime);
+        before = batch[batch.length - 1].signature;
+        if (batch.length < 1000) break;
+      }
+      if (!sigs.length) { box.style.display = 'none'; return; }
+
+      sigs.sort((a, b) => a - b);
+      const created = sigs[0];                 // create_shipment is the first tx
+      // Transactions after creation are NOT all proofs — assign_device also
+      // touches this PDA. The authoritative count is the one the program keeps
+      // on the Shipment account; signatures are used only for timing.
+      const proofCount = verdict && verdict.proofCount != null ? verdict.proofCount : null;
+      const activity = sigs.slice(1);
+      const now = Math.floor(Date.now() / 1000);
+      const last = sigs[sigs.length - 1];
+
+      let maxGap = 0;
+      for (let i = 1; i < sigs.length; i++) maxGap = Math.max(maxGap, sigs[i] - sigs[i - 1]);
+      const sinceLast = now - last;
+      const span = last - created;
+      const life = now - created;
+      // Fraction of the shipment's life that sits inside the attested window.
+      const covered = life > 0 ? Math.min(1, span / life) : 0;
+      const anyActivity = activity.length > 0;
+      const stale = anyActivity && sinceLast > Math.max(maxGap * 3, 900);
+
+      grid.innerHTML =
+        cov('Proofs', proofCount != null ? proofCount : '—',
+            'counted by the program itself', proofCount === 0) +
+        cov('Record starts', new Date(created * 1000).toLocaleString(), 'shipment created on-chain') +
+        cov('Last activity', anyActivity ? new Date(last * 1000).toLocaleString() : '—',
+            anyActivity ? fmtDur(sinceLast) + ' ago' : 'nothing since creation', stale) +
+        cov('Attested span', anyActivity ? fmtDur(span) : '—',
+            'of ' + fmtDur(life) + ' since creation') +
+        cov('Largest gap', anyActivity ? fmtDur(maxGap) : '—', 'longest unattested window',
+            anyActivity && maxGap > 3600);
+
+      document.getElementById('covBar').firstElementChild.style.cssText =
+        'left:0;width:' + (covered * 100).toFixed(1) + '%';
+      document.getElementById('covLegend').innerHTML =
+        '<span>CREATED</span><span>' + (covered * 100).toFixed(0) + '% OF ELAPSED TIME ATTESTED</span><span>NOW</span>';
+      box.style.display = 'block';
+    }
+    function cov(k, v, s, flag) {
+      return '<div class="cov"><div class="k">' + k + '</div>' +
+             '<div class="v' + (flag ? ' flag' : '') + '">' + v + '</div>' +
+             '<div class="s">' + s + '</div></div>';
+    }
 
     function renderResult(v) {
       const result = document.getElementById('verifyResult');

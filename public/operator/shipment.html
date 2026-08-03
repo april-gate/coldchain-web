@@ -100,6 +100,24 @@
       function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
       window.copyId = function(btn, id){ navigator.clipboard.writeText(id).then(function(){var t=btn.textContent;btn.textContent="✓";setTimeout(function(){btn.textContent=t;},1200);}); };
 
+      // Must reproduce functions/api/shipments/create.js byte for byte — same
+      // fields, same order — or its sha256 won't equal manifest_commitment.
+      function manifestJson(s){
+        return JSON.stringify({
+          name: s.name, tier: s.tier,
+          temp_c_min: s.temp_c_min, temp_c_max: s.temp_c_max,
+          num_devices: s.num_devices, duration_days: s.duration_days,
+          origin: s.origin, destination: s.destination, notes: s.notes
+        });
+      }
+      window.copyManifest = function(btn){
+        var t = document.getElementById("manifestJson").textContent;
+        navigator.clipboard.writeText(t).then(function(){
+          var o = btn.textContent; btn.textContent = "✓ Copied";
+          setTimeout(function(){ btn.textContent = o; }, 1400);
+        });
+      };
+
       function shortKey(k){ return k.length > 14 ? k.slice(0,8)+"…"+k.slice(-4) : k; }
       function fmtTs(sec){
         if (!sec) return "—";
@@ -228,6 +246,18 @@
                 row("Create transaction", s.create_sig ? '<a href="https://solscan.io/tx/'+esc(s.create_sig)+'?cluster=devnet" target="_blank" rel="noopener">'+esc(s.create_sig.slice(0,10))+'… ↗</a>' : "—") +
                 row("Shipment account", '<a href="https://solscan.io/account/'+esc(s.shipment_id)+'?cluster=devnet" target="_blank" rel="noopener">view on Solscan ↗</a>') +
                 '<div class="row"><span class="k">Chain status</span><span class="v" id="chainStatus"><span class="onchain-dot"></span>checking…</span></div>' +
+              '</div>' +
+              // The exact bytes create_shipment hashed into manifest_commitment.
+              // Hand this to the recipient: pasting it into /verify proves the
+              // terms have not been altered since the shipment was created.
+              '<div class="card"><h2>Shipment Configuration</h2>' +
+                '<p class="muted" style="margin-bottom:0.9rem">Give this to the recipient. Pasting it on the ' +
+                'Verify page proves it is the configuration committed to the blockchain at creation.</p>' +
+                '<pre id="manifestJson" style="font-family:var(--mono);font-size:0.7rem;color:var(--text-bright);' +
+                'background:var(--bg);border:1px solid var(--border);padding:0.85rem;overflow-x:auto;' +
+                'white-space:pre-wrap;word-break:break-all;margin-bottom:0.8rem;">'+esc(manifestJson(s))+'</pre>' +
+                '<button class="copy-btn" style="font-size:0.7rem;padding:0.35rem 0.8rem;" ' +
+                'onclick="copyManifest(this)">Copy configuration</button>' +
               '</div>';
           }
 
