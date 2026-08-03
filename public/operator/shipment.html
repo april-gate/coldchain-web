@@ -54,10 +54,11 @@
   </style>
   <link rel="stylesheet" href="/theme.css">
   <script src="/theme.js"></script>
+  <link rel="icon" type="image/png" href="/favicon.png">
 </head>
 <body>
   <nav>
-    <a href="/index.html" class="nav-logo">APRIL<span>//</span>GATE</a>
+    <a href="/index.html" class="nav-logo"><img src="/logo.png" alt="April Gate" style="height:34px;width:auto;display:block;border-radius:5px;" /></a>
     <div class="nav-mid">
       <a href="/how-it-works.html" class="nav-tag">Legal &amp; Compliance</a>
       <a href="/verify.html" class="nav-tag">Verify</a>
@@ -127,7 +128,8 @@
           }
 
           var devicesHtml = '<div class="card"><h2>Assigned Devices</h2><p class="muted">No devices assigned yet.</p></div>';
-          var actionsHtml = '<div class="actions"><a class="btn-primary" href="/verify/'+encodeURIComponent(shipmentId)+'" target="_blank" rel="noopener">View Verify Page ↗</a>' +
+          var actionsHtml = '<div class="actions"><a class="btn-primary" href="/operator/dashboard?shipment='+encodeURIComponent(shipmentId)+'">Dashboard →</a>' +
+                            '<a class="btn-secondary" href="/verify/'+encodeURIComponent(shipmentId)+'" target="_blank" rel="noopener">View Verify Page ↗</a>' +
                             '<a class="btn-secondary" href="/operator/">Back to list</a></div>';
           contentEl.innerHTML = headHtml + metaHtml + devicesHtml + actionsHtml;
 

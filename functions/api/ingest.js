@@ -9,11 +9,26 @@
  *   D1 binding  WAITLIST_DB  -> readings table (see schema/readings.sql)
  *   secret      INGEST_KEY   -> must match the X-Ingest-Key request header
  *
- * Body: { "v":1, "device_id":"test-01", "shipment_id":"ship-001",
- *         "proof_count":42, "timestamp":"2026-07-24T14:32:05Z", "temp_c":4.5 }
+ * Body: { "v":1, "device_id":"pico-01", "device_serial":"0123d7acbc34a9f9ee00…",
+ *         "shipment_id":"<base58 shipment PDA>", "proof_count":42,
+ *         "timestamp":"2026-07-24T14:32:05Z", "temp_c_centi":2537 }
  *
- * temp_c is degrees Celsius (the DS18B20's native unit). `temp` is accepted as
- * an alias for temp_c.
+ * ── TEMPERATURE UNITS ──────────────────────────────────────────────────────
+ * The device MUST declare its scale. Two accepted forms, both stored as
+ * canonical degrees Celsius with ingest_v = 2:
+ *
+ *   { "temp_c_centi": 2537 }          -> 25.37 °C   (integer centi-Celsius)
+ *   { "temp_c": 25.37, "unit": "C" }  -> 25.37 °C   (float degrees)
+ *
+ * A bare `temp_c`/`temp` with no `unit` is the LEGACY shape current firmware
+ * sends: an integer that is really centi-Celsius but is labelled as degrees.
+ * We store that value VERBATIM and mark the row ingest_v = 1 so readers know
+ * the scale — we never guess at the magnitude. The response carries a
+ * `warning` telling the device to declare its units.
+ *
+ * `device_serial` is the ATECC608 serial as lowercase hex — the same bytes the
+ * program stores in DeviceRegistry.device_id. It is what joins a reading to its
+ * on-chain DeviceAssignment. The human `device_id` is a display label only.
  */
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -28,6 +43,48 @@ function num(v) {
 }
 function int(v) {
   return typeof v === "number" && Number.isInteger(v) ? v : null;
+}
+/** Lowercase hex, no 0x, even length. Anything else is not a device serial. */
+function hex(v, max = 64) {
+  if (typeof v !== "string") return null;
+  const s = v.trim().toLowerCase().replace(/^0x/, "");
+  return /^[0-9a-f]+$/.test(s) && s.length % 2 === 0 && s.length <= max ? s : null;
+}
+
+/**
+ * Resolve the reading's temperature to (value, ingest_v) per the unit contract
+ * documented at the top of this file. Returns null when no usable value was
+ * supplied, or an { error } when the payload is self-contradictory.
+ */
+function resolveTemp(data) {
+  const centi = num(data.temp_c_centi);
+  const plain = num(data.temp_c) ?? num(data.temp);
+  const unit = str(data.unit, 8);
+
+  if (centi !== null && plain !== null) {
+    return { error: "Send either temp_c_centi or temp_c, not both." };
+  }
+  // Explicit centi-Celsius -> canonical degrees.
+  if (centi !== null) return { temp_c: centi / 100, ingest_v: 2 };
+
+  if (plain === null) {
+    return { error: "A temperature is required (temp_c_centi, or temp_c with unit)." };
+  }
+  // Explicit unit declaration.
+  if (unit) {
+    const u = unit.toUpperCase();
+    if (u === "C" || u === "°C") return { temp_c: plain, ingest_v: 2 };
+    if (u === "CENTI_C" || u === "CC") return { temp_c: plain / 100, ingest_v: 2 };
+    return { error: `Unsupported unit "${unit}". Use "C" or "centi_C".` };
+  }
+  // Legacy: undeclared scale. Store verbatim, flag the row, warn the device.
+  return {
+    temp_c: plain,
+    ingest_v: 1,
+    warning:
+      "temp_c was sent without a `unit`; stored as legacy centi-Celsius " +
+      "(ingest_v=1). Send `temp_c_centi` (integer) or `temp_c` + `unit:\"C\"`.",
+  };
 }
 
 export async function onRequestPost({ request, env }) {
@@ -48,19 +105,20 @@ export async function onRequestPost({ request, env }) {
   if (!shipmentId) {
     return json({ ok: false, error: "shipment_id is required." }, 400);
   }
-  // Celsius (native sensor unit). Accept `temp` as an alias; 0 °C stays valid.
-  const tempC = num(data.temp_c) ?? num(data.temp);
-  if (tempC === null) {
-    return json({ ok: false, error: "temp_c must be a number." }, 400);
+  const temp = resolveTemp(data);
+  if (temp.error) {
+    return json({ ok: false, error: temp.error }, 400);
   }
 
   const row = {
-    shipment_id: shipmentId,
-    device_id:   str(data.device_id, 120),
-    proof_count: int(data.proof_count),
-    timestamp:   str(data.timestamp, 40),
-    temp_c:      tempC,
-    source_ip:   request.headers.get("CF-Connecting-IP") || "",
+    shipment_id:   shipmentId,
+    device_id:     str(data.device_id, 120),
+    device_serial: hex(data.device_serial ?? data.device_id_hex),
+    proof_count:   int(data.proof_count),
+    timestamp:     str(data.timestamp, 40),
+    temp_c:        temp.temp_c,
+    ingest_v:      temp.ingest_v,
+    source_ip:     request.headers.get("CF-Connecting-IP") || "",
   };
 
   if (!env.WAITLIST_DB) {
@@ -71,17 +129,21 @@ export async function onRequestPost({ request, env }) {
   try {
     await env.WAITLIST_DB.prepare(
       `INSERT INTO readings
-         (shipment_id, device_id, proof_count, timestamp, temp_c, received_at, source_ip)
-       VALUES (?, ?, ?, ?, ?, datetime('now'), ?)`
+         (shipment_id, device_id, device_serial, proof_count, timestamp, temp_c,
+          ingest_v, received_at, source_ip)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)`
     )
-      .bind(row.shipment_id, row.device_id, row.proof_count, row.timestamp, row.temp_c, row.source_ip)
+      .bind(
+        row.shipment_id, row.device_id, row.device_serial, row.proof_count,
+        row.timestamp, row.temp_c, row.ingest_v, row.source_ip
+      )
       .run();
   } catch (err) {
     console.error("D1 insert (readings) failed:", err && err.message);
     return json({ ok: false, error: "Could not store reading." }, 500);
   }
 
-  return json({ ok: true });
+  return temp.warning ? json({ ok: true, warning: temp.warning }) : json({ ok: true });
 }
 
 export async function onRequestGet() {
