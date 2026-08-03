@@ -29,6 +29,14 @@
  * `device_serial` is the ATECC608 serial as lowercase hex — the same bytes the
  * program stores in DeviceRegistry.device_id. It is what joins a reading to its
  * on-chain DeviceAssignment. The human `device_id` is a display label only.
+ *
+ * ── SENSOR FAULTS ──────────────────────────────────────────────────────────
+ * A reading is recorded as a fault (sensor_ok = 0, temp_c = NULL) when either:
+ *   • the device sends `sensor_ok: false`, or
+ *   • the temperature is outside PLAUSIBLE_C — firmware signals a failed read
+ *     with a sentinel value (observed: -100000, i.e. -1000 °C).
+ * The row is still stored. A gap in a cold-chain record is evidence and must be
+ * visible; inventing a temperature to fill it would misrepresent the shipment.
  */
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
@@ -50,6 +58,11 @@ function hex(v, max = 64) {
   const s = v.trim().toLowerCase().replace(/^0x/, "");
   return /^[0-9a-f]+$/.test(s) && s.length % 2 === 0 && s.length <= max ? s : null;
 }
+
+// Widest band any real cold-chain sensor can report. The DS18B20 spans
+// -55..+125 °C; the margin leaves room for other parts without ever admitting a
+// sentinel like -1000 °C.
+const PLAUSIBLE_C = { min: -80, max: 150 };
 
 /**
  * Resolve the reading's temperature to (value, ingest_v) per the unit contract
@@ -105,9 +118,32 @@ export async function onRequestPost({ request, env }) {
   if (!shipmentId) {
     return json({ ok: false, error: "shipment_id is required." }, 400);
   }
-  const temp = resolveTemp(data);
-  if (temp.error) {
-    return json({ ok: false, error: temp.error }, 400);
+  // A device that reports its own sensor as failed is taken at its word: the
+  // row is stored as a fault and no temperature is required or believed.
+  const declaredFault = data.sensor_ok === false;
+
+  let temp;
+  if (declaredFault) {
+    temp = { temp_c: null, ingest_v: 2, sensor_ok: 0, warning: "Device reported sensor_ok:false — stored as a sensor fault, no temperature recorded." };
+  } else {
+    temp = resolveTemp(data);
+    if (temp.error) {
+      return json({ ok: false, error: temp.error }, 400);
+    }
+    // A sentinel slipped through with sensor_ok unset (or true). Treat an
+    // impossible temperature as the failed read it is rather than storing it.
+    var asDegrees = temp.ingest_v >= 2 ? temp.temp_c : temp.temp_c / 100;
+    if (asDegrees < PLAUSIBLE_C.min || asDegrees > PLAUSIBLE_C.max) {
+      temp = {
+        temp_c: null,
+        ingest_v: temp.ingest_v,
+        sensor_ok: 0,
+        warning: "Temperature " + asDegrees + " °C is outside the plausible range (" +
+          PLAUSIBLE_C.min + ".." + PLAUSIBLE_C.max + " °C); stored as a sensor fault.",
+      };
+    } else {
+      temp.sensor_ok = 1;
+    }
   }
 
   const row = {
@@ -118,6 +154,7 @@ export async function onRequestPost({ request, env }) {
     timestamp:     str(data.timestamp, 40),
     temp_c:        temp.temp_c,
     ingest_v:      temp.ingest_v,
+    sensor_ok:     temp.sensor_ok,
     source_ip:     request.headers.get("CF-Connecting-IP") || "",
   };
 
@@ -130,12 +167,12 @@ export async function onRequestPost({ request, env }) {
     await env.WAITLIST_DB.prepare(
       `INSERT INTO readings
          (shipment_id, device_id, device_serial, proof_count, timestamp, temp_c,
-          ingest_v, received_at, source_ip)
-       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)`
+          ingest_v, sensor_ok, received_at, source_ip)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)`
     )
       .bind(
         row.shipment_id, row.device_id, row.device_serial, row.proof_count,
-        row.timestamp, row.temp_c, row.ingest_v, row.source_ip
+        row.timestamp, row.temp_c, row.ingest_v, row.sensor_ok, row.source_ip
       )
       .run();
   } catch (err) {

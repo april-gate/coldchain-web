@@ -18,3 +18,9 @@ yarn-error.log*
 local/.env
 .DS_Store
 .dev.vars
+
+# Source video masters. The web-ready transcode lives in public/assets/ and IS
+# committed; the multi-hundred-MB originals are not (they also exceed
+# Cloudflare Pages' 25 MiB per-file limit, so they can never be served).
+/*.mov
+/*.MOV

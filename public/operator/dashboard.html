@@ -204,9 +204,13 @@
    * 1/absent = legacy centi-Celsius written before the units fix.
    */
   function degC(r) {
+    // A device-reported sensor fault has no temperature. Never coerce it to a
+    // number — a fabricated reading is worse than a visible gap.
+    if (r.sensor_ok === 0) return null;
     if (typeof r.temp_c !== "number") return null;
     return (r.ingest_v >= 2) ? r.temp_c : r.temp_c / 100;
   }
+  function isFault(r) { return r.sensor_ok === 0; }
 
   async function rpc(method, params) {
     var res = await fetch(RPC, {
@@ -255,6 +259,11 @@
   var chainError = null;
   var readings = [];      // newest-first, this shipment only
   var telemetryError = null;
+  // Each source paints as soon as IT resolves — devnet's getProgramAccounts can
+  // take seconds, and blocking the first paint on it leaves the page looking
+  // empty until something forces a re-render.
+  var chainLoaded = false;
+  var readingsLoaded = false;
 
   // ── loaders ─────────────────────────────────────────────────────────────
   async function loadMeta() {
@@ -323,18 +332,19 @@
       chain = null;
       chainError = "Could not reach devnet RPC: " + (e && e.message ? e.message : e);
     }
+    chainLoaded = true;
   }
 
   async function loadReadings() {
     try {
       var r = await fetch("/api/readings?shipment_id=" + encodeURIComponent(shipmentId) + "&limit=2000", { cache: "no-store" });
       var j = await r.json();
-      if (!j.ok) { telemetryError = j.error || "Telemetry unavailable."; return; }
-      readings = j.readings || [];
-      telemetryError = null;
+      if (!j.ok) { telemetryError = j.error || "Telemetry unavailable."; }
+      else { readings = j.readings || []; telemetryError = null; }
     } catch (e) {
       telemetryError = "Telemetry endpoint unreachable.";
     }
+    readingsLoaded = true;
   }
 
   // ── derived ─────────────────────────────────────────────────────────────
@@ -367,19 +377,25 @@
       return rs.length && (Date.now() - msOf(rs[0])) < STALE_MS;
     }).length;
 
+    // Sensor faults carry no temperature and must never enter the maths.
     var temps = readings.map(degC).filter(function (t) { return t != null; });
     var latest = temps.length ? temps[0] : null;
     var excursions = temps.filter(function (t) { return !inRange(t); }).length;
+    var faults = readings.filter(isFault).length;
     var range = meta && meta.temp_c_min != null
       ? meta.temp_c_min + " to " + meta.temp_c_max + " °C" : "not set";
 
     el("stats").innerHTML =
-      stat("Devices reporting", reporting, devices.length + " assigned on-chain", reporting ? "accent" : "") +
-      stat("Proofs on-chain", chain ? chain.shipment.proofCount : "—", "program-owned count", "accent") +
-      stat("Latest temp", latest == null ? "—" : latest.toFixed(2) + "°C",
+      stat("Devices reporting", chainLoaded ? reporting : "…",
+           chainLoaded ? devices.length + " assigned on-chain" : "reading devnet", reporting ? "accent" : "") +
+      stat("Proofs on-chain", chain ? chain.shipment.proofCount : (chainLoaded ? "—" : "…"),
+           "program-owned count", "accent") +
+      stat("Latest temp", latest == null ? (readingsLoaded ? "—" : "…") : latest.toFixed(2) + "°C",
            "target: " + range, latest != null && !inRange(latest) ? "warn" : "") +
-      stat("Readings", readings.length, "this shipment only", "") +
-      stat("Excursions", excursions, "outside target range", excursions ? "warn" : "");
+      stat("Readings", readingsLoaded ? readings.length : "…", "this shipment only", "") +
+      (faults
+        ? stat("Sensor faults", faults, "no temperature recorded", "warn")
+        : stat("Excursions", excursions, "outside target range", excursions ? "warn" : ""));
   }
   function stat(label, value, sub, cls) {
     return '<div class="stat"><div class="l">' + esc(label) + '</div>' +
@@ -391,8 +407,10 @@
     var body;
     if (chainError) {
       body = '<p class="muted">' + esc(chainError) + '</p>';
-    } else if (!chain) {
+    } else if (!chainLoaded) {
       body = '<p class="muted">Reading devnet…</p>';
+    } else if (!chain) {
+      body = '<p class="muted">No shipment account found at this address on devnet.</p>';
     } else {
       var s = chain.shipment;
       body =
@@ -415,8 +433,10 @@
     var html, note = "";
     if (chainError) {
       html = '<p class="muted">' + esc(chainError) + "</p>";
-    } else if (!chain) {
+    } else if (!chainLoaded) {
       html = '<p class="muted">Reading devnet…</p>';
+    } else if (!chain) {
+      html = '<p class="muted">No shipment account found on devnet.</p>';
     } else if (!chain.devices.length) {
       html = '<p class="muted">No device is assigned to this shipment on-chain. ' +
              "A device appears here once it calls <code>assign_device</code> against this shipment PDA.</p>";
@@ -428,11 +448,14 @@
         var t = last ? degC(last) : null;
         var age = last ? Date.now() - msOf(last) : null;
         var stale = age == null || age > STALE_MS;
+        var faulted = last ? isFault(last) : false;
         var bad = t != null && !inRange(t);
-        var cls = bad ? "excursion" : (stale ? "stale" : "");
-        var tempHtml = t == null
-          ? '<div class="t none">' + (d.serial ? "no telemetry linked" : "serial unreadable") + "</div>"
-          : '<div class="t ' + (bad ? "warn" : "") + '">' + t.toFixed(2) + "°C</div>";
+        var cls = (bad || faulted) ? "excursion" : (stale ? "stale" : "");
+        var tempHtml = faulted
+          ? '<div class="t none" style="color:var(--warn)">SENSOR FAULT</div>'
+          : (t == null
+            ? '<div class="t none">' + (d.serial ? "no telemetry linked" : "serial unreadable") + "</div>"
+            : '<div class="t ' + (bad ? "warn" : "") + '">' + t.toFixed(2) + "°C</div>");
         return '<div class="dev ' + cls + '">' +
           '<div class="id">' + esc(d.serial ? d.serial : shortId(d.devicePda)) + "</div>" +
           tempHtml +
@@ -459,10 +482,18 @@
     var wrap = el("chartCard");
     var withTemp = readings.filter(function (r) { return degC(r) != null; });
     if (withTemp.length < 2) {
-      wrap.innerHTML = '<h2>Temperature</h2><p class="muted">' +
-        (telemetryError ? esc(telemetryError)
-          : "Not enough readings to plot yet — a line appears once this shipment has two or more readings.") +
-        "</p>";
+      var nFaults = readings.filter(isFault).length;
+      var msg;
+      if (telemetryError) msg = esc(telemetryError);
+      else if (!readingsLoaded) msg = "Loading telemetry…";
+      else if (nFaults && !withTemp.length) {
+        msg = "No temperature has been measured. " + nFaults + " reading(s) arrived, but the " +
+              "device reported a sensor fault on each — nothing was recorded to plot.";
+      } else {
+        msg = "Not enough readings to plot yet — a line appears once this shipment has two or " +
+              "more measured temperatures.";
+      }
+      wrap.innerHTML = '<h2>Temperature</h2><p class="muted">' + msg + "</p>";
       return;
     }
     // Group by device serial (falling back to the display label) so each device
@@ -521,11 +552,16 @@
     var body;
     if (telemetryError) {
       body = '<p class="muted">' + esc(telemetryError) + "</p>";
+    } else if (!readingsLoaded) {
+      body = '<p class="muted">Loading telemetry…</p>';
     } else if (!readings.length) {
       body = '<p class="muted">No telemetry has been received for this shipment. Readings appear here as soon as ' +
              "a device posts to <code>/api/ingest</code> with this shipment's PDA as <code>shipment_id</code>.</p>";
     } else {
-      var legacy = readings.filter(function (r) { return !(r.ingest_v >= 2); }).length;
+      // Only rows that actually carry a temperature can be on the legacy scale.
+      var legacy = readings.filter(function (r) {
+        return !(r.ingest_v >= 2) && !isFault(r) && r.temp_c != null;
+      }).length;
       body = (legacy ? '<p class="muted" style="margin-bottom:0.7rem">' + legacy +
                 " row(s) predate the units fix and are read as centi-Celsius (ingest_v=1).</p>" : "") +
         '<div class="tablewrap"><table><thead><tr><th>Device time</th><th>Device</th><th>Temp</th>' +
@@ -533,9 +569,10 @@
         readings.slice(0, 200).map(function (r) {
           var t = degC(r);
           var bad = t != null && !inRange(t);
+          var cell = isFault(r) ? "SENSOR FAULT" : (t == null ? "—" : t.toFixed(2) + "°C");
           return "<tr><td>" + esc(fmtTime(r.timestamp)) + "</td>" +
             "<td>" + esc(r.device_serial ? shortHex(trimSerial(String(r.device_serial))) : (r.device_id || "—")) + "</td>" +
-            '<td class="t ' + (bad ? "warn" : "") + '">' + (t == null ? "—" : t.toFixed(2) + "°C") + "</td>" +
+            '<td class="t ' + (bad || isFault(r) ? "warn" : "") + '">' + cell + "</td>" +
             "<td>" + (r.proof_count != null ? esc(r.proof_count) : "—") + "</td>" +
             "<td>" + esc(fmtTime(r.received_at)) + "</td></tr>";
         }).join("") + "</tbody></table></div>";
@@ -601,8 +638,9 @@
   (async function start() {
     await loadMeta();
     shell();
-    await Promise.all([loadChain(), loadReadings()]);
-    renderAll();
+    renderAll();                                  // paint the frame + loading states now
+    loadReadings().then(renderAll);               // D1 is fast — usually first on screen
+    loadChain().then(renderAll);                  // devnet may take seconds; fills in after
     setInterval(function () { loadReadings().then(renderAll); }, POLL_TELEMETRY_MS);
     setInterval(function () { loadChain().then(renderAll); }, POLL_CHAIN_MS);
   })();

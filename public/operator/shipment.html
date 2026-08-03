@@ -50,6 +50,14 @@
     .onchain-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:0.5rem; background:var(--text-dim); }
     .onchain-dot.ok { background:var(--accent); }
     .onchain-dot.bad { background:var(--warn); }
+    .dev-tablewrap { overflow-x:auto; }
+    .dev-table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:0.72rem; }
+    .dev-table th { text-align:left; color:var(--text-dim); font-weight:400; letter-spacing:0.1em; text-transform:uppercase; font-size:0.58rem; padding:0.4rem 0.6rem 0.4rem 0; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .dev-table td { padding:0.5rem 0.6rem 0.5rem 0; border-bottom:1px solid var(--border); color:var(--text-bright); white-space:nowrap; }
+    .dev-table tr:last-child td { border-bottom:none; }
+    .dev-table td.ok { color:var(--accent); }
+    .dev-table td.ended { color:var(--text-dim); }
+    .dev-table a { color:var(--accent); text-decoration:none; }
     @media (max-width:820px){ .nav-mid .nav-tag{display:none;} }
   </style>
   <link rel="stylesheet" href="/theme.css">
@@ -92,6 +100,102 @@
       function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
       window.copyId = function(btn, id){ navigator.clipboard.writeText(id).then(function(){var t=btn.textContent;btn.textContent="✓";setTimeout(function(){btn.textContent=t;},1200);}); };
 
+      function shortKey(k){ return k.length > 14 ? k.slice(0,8)+"…"+k.slice(-4) : k; }
+      function fmtTs(sec){
+        if (!sec) return "—";
+        var d = new Date(sec * 1000);
+        return isNaN(d) ? "—" : d.toLocaleString();
+      }
+
+      // ── Browser-side fallback ────────────────────────────────────────────
+      // Public devnet blocks getProgramAccounts from some networks, Cloudflare's
+      // edge among them. Browser IPs are not blocked, so if the Worker route
+      // can't read the chain we run the identical query from here rather than
+      // dead-ending the list. Same filters, same offsets — only the caller moves.
+      var PROGRAM_ID = "APRBVwwJJeStD5wShyg4HivneDYj4TCPYKtSFX5F4jez";
+      var DEVICE_ASSIGNMENT_SIZE = 129;
+      var B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+      function b58encode(bytes){
+        var digits=[0],i,j,carry;
+        for(i=0;i<bytes.length;i++){ carry=bytes[i];
+          for(j=0;j<digits.length;j++){ carry+=digits[j]<<8; digits[j]=carry%58; carry=(carry/58)|0; }
+          while(carry){ digits.push(carry%58); carry=(carry/58)|0; } }
+        var out=""; for(i=0;i<bytes.length&&bytes[i]===0;i++) out+="1";
+        for(j=digits.length-1;j>=0;j--) out+=B58[digits[j]];
+        return out;
+      }
+      function b64ToBytes(b64){ var s=atob(b64),a=new Uint8Array(s.length); for(var i=0;i<s.length;i++) a[i]=s.charCodeAt(i); return a; }
+      function u32le(b,o){ return (b[o]|(b[o+1]<<8)|(b[o+2]<<16)|(b[o+3]<<24))>>>0; }
+      function i64le(b,o){ var v=0n; for(var i=7;i>=0;i--) v=(v<<8n)|BigInt(b[o+i]); if(v>=1n<<63n) v-=1n<<64n; return Number(v); }
+
+      function loadAssignmentsFromChain(){
+        return fetch(DEVNET_RPC, { method:"POST", headers:{"content-type":"application/json"},
+          body: JSON.stringify({ jsonrpc:"2.0", id:1, method:"getProgramAccounts", params:[PROGRAM_ID, {
+            encoding:"base64",
+            filters:[ { dataSize: DEVICE_ASSIGNMENT_SIZE }, { memcmp:{ offset:40, bytes: shipmentId } } ]
+          }]}) })
+          .then(function(r){ return r.json(); })
+          .then(function(j){
+            if (j.error) throw new Error(j.error.message || "getProgramAccounts failed");
+            var list = (j.result||[]).map(function(a){
+              var b = b64ToBytes(a.account.data[0]);
+              return {
+                assignment_pubkey: a.pubkey,
+                device_pubkey: b58encode(b.slice(8,40)),
+                sequence: u32le(b,72),
+                authority: b58encode(b.slice(76,108)),
+                assigned_at: i64le(b,108),
+                ended_at: i64le(b,116),
+                proof_count: u32le(b,124)
+              };
+            });
+            list.sort(function(x,y){ return x.assigned_at-y.assigned_at || x.sequence-y.sequence; });
+            return { shipment_id: shipmentId, count: list.length, assignments: list };
+          });
+      }
+
+      // Assigned devices come from DeviceAssignment accounts on-chain — never
+      // from a database — so the list cannot drift from what the program says.
+      function loadAssignments(){
+        var body = document.getElementById("devicesBody");
+        if (!body) return;
+        fetch("/api/shipments/" + encodeURIComponent(shipmentId) + "/assignments", { cache:"no-store" })
+          .then(function(r){ return r.json(); })
+          .then(function(j){
+            // Route reachable but its chain read failed → retry from the browser.
+            return j.error ? loadAssignmentsFromChain() : j;
+          })
+          .catch(function(){ return loadAssignmentsFromChain(); })
+          .then(function(res){
+            if (!res.count) {
+              body.outerHTML = '<p class="muted" id="devicesBody">No devices assigned yet. ' +
+                'A device appears here once it calls <code>assign_device</code> against this shipment.</p>';
+              return;
+            }
+            var rows = res.assignments.map(function(a){
+              var active = !a.ended_at;
+              return '<tr>' +
+                '<td><span title="'+esc(a.device_pubkey)+'">'+esc(shortKey(a.device_pubkey))+'</span>' +
+                  '<button class="copy-btn" onclick="copyId(this,\''+esc(a.device_pubkey)+'\')" title="Copy device address">copy</button></td>' +
+                '<td>'+esc(a.sequence)+'</td>' +
+                '<td>'+esc(a.proof_count)+'</td>' +
+                '<td>'+esc(fmtTs(a.assigned_at))+'</td>' +
+                '<td class="'+(active?"ok":"ended")+'">'+(active?"Active":"Ended "+esc(fmtTs(a.ended_at)))+'</td>' +
+                '<td><a href="https://solscan.io/account/'+esc(a.device_pubkey)+'?cluster=devnet" target="_blank" rel="noopener">Solscan ↗</a></td>' +
+              '</tr>';
+            }).join("");
+            body.outerHTML =
+              '<div class="dev-tablewrap"><table class="dev-table"><thead><tr>' +
+                '<th>Device</th><th>Seq</th><th>Proofs</th><th>Assigned</th><th>Status</th><th></th>' +
+              '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+          })
+          .catch(function(err){
+            // Both the Worker route and the direct browser read failed.
+            body.outerHTML = '<p class="muted" id="devicesBody">Could not read assigned devices from Solana: ' +
+              esc(err && err.message ? err.message : "network error") + '</p>';
+          });
+      }
+
       if (!shipmentId || shipmentId === "shipment.html") {
         contentEl.innerHTML = '<p class="muted">No shipment id in the URL.</p>'; return;
       }
@@ -127,11 +231,15 @@
               '</div>';
           }
 
-          var devicesHtml = '<div class="card"><h2>Assigned Devices</h2><p class="muted">No devices assigned yet.</p></div>';
+          var devicesHtml = '<div class="card" id="devicesCard"><h2>Assigned Devices</h2>' +
+                            '<p class="muted" id="devicesBody">Reading assignments from devnet…</p></div>';
           var actionsHtml = '<div class="actions"><a class="btn-primary" href="/operator/dashboard?shipment='+encodeURIComponent(shipmentId)+'">Dashboard →</a>' +
                             '<a class="btn-secondary" href="/verify/'+encodeURIComponent(shipmentId)+'" target="_blank" rel="noopener">View Verify Page ↗</a>' +
                             '<a class="btn-secondary" href="/operator/">Back to list</a></div>';
           contentEl.innerHTML = headHtml + metaHtml + devicesHtml + actionsHtml;
+
+          // Assigned devices, straight from the chain via the assignments route.
+          loadAssignments();
 
           // Light on-chain existence check (browser IP is not blocked like CF's).
           var statusEl = document.getElementById("chainStatus");
