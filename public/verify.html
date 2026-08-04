@@ -1184,6 +1184,12 @@
 
   <script type="module">
     import { verifyShipment } from '/assets/aprilgate.js';
+    // Canonicalization is a public, dependency-free module served as-is, so a
+    // third party can fetch it and reproduce any commitment without trusting us.
+    import { CONFIG_VERSION, configCommitmentHex } from '/shared/shipment-config.js';
+
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g,
+      (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
     const EXPLORER = (addr) => `https://explorer.solana.com/address/${addr}?cluster=devnet`;
     const short = (h) => (h && h.length > 20 ? `${h.slice(0, 16)}…${h.slice(-4)}` : (h || '—'));
@@ -1277,24 +1283,31 @@
     }
 
     /**
-     * Compare the pasted configuration against the on-chain commitment.
+     * Compare the pasted configuration document against the on-chain commitment.
      *
-     * The commitment is SHA-256 over the exact manifest bytes the operator
-     * committed, so the comparison is byte-exact by design — that strictness is
-     * the point. But a shipper pasting from an email will pick up reformatting
-     * that changes bytes without changing meaning, so on a miss we retry once
-     * against a canonical re-serialisation (the field order create_shipment
-     * uses) and say plainly which form matched.
+     * The commitment covers the WHOLE document, so origin, destination, notes
+     * and the shipment_id are tamper-evident too — not just the temperature
+     * band. Canonicalization happens in the shared module, so reindenting the
+     * document or reordering its keys cannot break the check; changing any
+     * committed value will.
+     *
+     * Dispatch is on the document's own `version`. When v2.0 lands it gets its
+     * own branch here and v1.0 stays exactly as it is, so shipments committed
+     * today keep verifying forever.
      */
-    const MANIFEST_KEYS = ['name','tier','temp_c_min','temp_c_max','num_devices',
-                           'duration_days','origin','destination','notes'];
-    function canonicalise(text) {
-      let o;
-      try { o = JSON.parse(text); } catch { return null; }
-      if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
-      const out = {};
-      for (const k of MANIFEST_KEYS) if (k in o) out[k] = o[k];
-      return Object.keys(out).length ? JSON.stringify(out) : null;
+    async function commitmentFromDocument(text) {
+      let doc;
+      try { doc = JSON.parse(text); }
+      catch { throw new Error('that is not valid JSON — paste the configuration document as it was given to you'); }
+      if (!doc || typeof doc !== 'object' || Array.isArray(doc)) {
+        throw new Error('the configuration must be a JSON object');
+      }
+      if (doc.version !== CONFIG_VERSION) {
+        throw new Error(
+          `this document declares version ${JSON.stringify(doc.version)}; ` +
+          `this page verifies ${CONFIG_VERSION}`);
+      }
+      return { hex: await configCommitmentHex(doc), doc };
     }
 
     async function checkManifest() {
@@ -1303,47 +1316,53 @@
       const pda = document.getElementById('verifyInput').value.trim();
       const text = document.getElementById('configInput').value;
 
-      if (!pda) { out.innerHTML = '<div class="field-hint">Enter a Shipment ID first.</div>'; return; }
-      btn.disabled = true; btn.textContent = 'Reading chain…';
+      btn.disabled = true; btn.textContent = 'Reading chain\u2026';
       try {
         const chainHex = await onChainManifest(pda);
         if (!chainHex) {
           out.innerHTML = '<div class="field-hint">No shipment account exists at that address on devnet.</div>';
           return;
         }
-        if (!text.trim()) {
+
+        let computed, doc;
+        try {
+          ({ hex: computed, doc } = await commitmentFromDocument(text));
+        } catch (e) {
           out.innerHTML =
-            '<div class="manifest-rows"><div><span>On-chain manifest commitment</span>' +
-            '<span>' + chainHex + '</span></div></div>' +
-            '<div class="field-hint" style="margin-top:0.6rem;">' +
-            'Paste the shipper\'s configuration above to check it against this commitment.</div>';
+            '<div class="manifest-verdict nomatch">Cannot read configuration</div>' +
+            '<div class="field-hint" style="margin-top:0.7rem;">' + (e?.message || e) + '</div>' +
+            '<div class="manifest-rows"><div><span>On-chain commitment</span>' +
+            '<span>' + chainHex + '</span></div></div>';
           return;
         }
 
-        const rawHex = await sha256Hex(text);
-        let match = rawHex === chainHex, how = 'exact bytes', usedHex = rawHex;
-        if (!match) {
-          const canon = canonicalise(text);
-          if (canon) {
-            const canonHex = await sha256Hex(canon);
-            if (canonHex === chainHex) { match = true; how = 'canonical JSON form'; usedHex = canonHex; }
-          }
-        }
+        // The document names its own shipment. If that disagrees with the ID
+        // being verified, say so plainly — a bare hash mismatch would leave the
+        // reader guessing which of the two is wrong.
+        const wrongShipment = doc.shipment_id && doc.shipment_id !== pda;
+        const match = computed === chainHex;
 
         out.innerHTML =
           '<div class="manifest-verdict ' + (match ? 'match' : 'nomatch') + '">' +
-            (match ? 'Configuration matches' : 'Configuration does NOT match') + '</div>' +
+            (match ? 'Configuration matches on-chain commitment'
+                   : 'Configuration does NOT match on-chain commitment') + '</div>' +
+          (wrongShipment
+            ? '<div class="field-hint" style="margin-top:0.7rem;">This document is for shipment ' +
+              '<b>' + esc(doc.shipment_id) + '</b>, but you are verifying <b>' + esc(pda) + '</b>. ' +
+              'You are holding the wrong document, or it was issued for a different shipment.</div>'
+            : '') +
           '<div class="manifest-rows">' +
             '<div><span>On-chain commitment</span><span>' + chainHex + '</span></div>' +
-            '<div><span>Hash of pasted text</span><span>' + usedHex + '</span></div>' +
-            (match
-              ? '<div><span>Matched on</span><span>' + how + '</span></div>'
-              : '') +
+            '<div><span>Recomputed from document</span><span>' + computed + '</span></div>' +
           '</div>' +
           '<div class="field-hint" style="margin-top:0.7rem;">' +
             (match
-              ? 'This configuration is the one committed to the blockchain when the shipment was created. It has not been altered since.'
-              : 'The pasted text does not hash to the commitment on the blockchain. Either it is not this shipment\'s configuration, it has been altered, or it was reformatted in transit — check for changed whitespace, field order, or missing fields before treating this as tampering.') +
+              ? 'Every term in this document — route, temperature range, devices, duration and ' +
+                'notes — is the one committed to the blockchain when the shipment was created. ' +
+                'None of it has been altered since.'
+              : 'This document does not produce the commitment stored on-chain. Something in it ' +
+                'has been changed since the shipment was created, or it belongs to a different ' +
+                'shipment. Reindenting or reordering the document cannot cause this.') +
           '</div>';
       } catch (e) {
         out.innerHTML = '<div class="field-hint">Could not read the chain: ' + (e?.message || e) + '</div>';

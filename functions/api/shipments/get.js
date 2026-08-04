@@ -19,7 +19,8 @@ export async function onRequestGet({ request, env }) {
     const row = await env.WAITLIST_DB.prepare(
       `SELECT shipment_id, name, tier, temp_c_min, temp_c_max, num_devices,
               duration_days, origin, destination, notes, nonce_hex,
-              manifest_commitment_hex, create_sig, authority, network, created_at
+              manifest_commitment_hex, create_sig, authority, config_json,
+              config_version, network, created_at
          FROM shipments WHERE shipment_id = ?`
     ).bind(id).first();
 
