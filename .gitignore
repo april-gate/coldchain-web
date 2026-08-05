@@ -20,7 +20,9 @@ local/.env
 .dev.vars
 
 # Source video masters. The web-ready transcode lives in public/assets/ and IS
-# committed; the multi-hundred-MB originals are not (they also exceed
-# Cloudflare Pages' 25 MiB per-file limit, so they can never be served).
+# committed; the full-size originals are not (they also exceed Cloudflare Pages'
+# 25 MiB per-file limit, so they can never be served — keeping one under public/
+# would fail the next deploy outright).
 /*.mov
 /*.MOV
+/media/
