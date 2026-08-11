@@ -13,7 +13,7 @@ export const PROGRAM_ID = new PublicKey(
   "APRBVwwJJeStD5wShyg4HivneDYj4TCPYKtSFX5F4jez"
 );
 
-/** Shipment PDA — derived from authority + 32-byte nonce. */
+/** Shipment PDA — seeds ["shipment", authority, nonce_32]. (already correct) */
 export function shipmentPda(authority: PublicKey, nonce: Uint8Array): PublicKey {
   const [pda] = PublicKey.findProgramAddressSync(
     [Buffer.from("shipment"), authority.toBuffer(), Buffer.from(nonce)],
@@ -22,8 +22,11 @@ export function shipmentPda(authority: PublicKey, nonce: Uint8Array): PublicKey 
   return pda;
 }
 
-/** Device PDA — derived from device_id. */
-export function devicePda(deviceId: string): PublicKey {
+/**
+ * Device PDA — seeds ["device", device_id] where device_id is the raw 32 bytes
+ * (ATECC608 serial in [0..9], rest zero) — NOT the human string like "pico-01".
+ */
+export function devicePda(deviceId: Uint8Array): PublicKey {
   const [pda] = PublicKey.findProgramAddressSync(
     [Buffer.from("device"), Buffer.from(deviceId)],
     PROGRAM_ID
@@ -31,10 +34,16 @@ export function devicePda(deviceId: string): PublicKey {
   return pda;
 }
 
-/** Assignment (shipment-device) PDA. */
-export function assignmentPda(shipment: PublicKey, device: PublicKey): PublicKey {
+/**
+ * Assignment PDA — seeds ["assignment", device_pubkey, sequence_u32_le] where
+ * `sequence` is the device's assignment_count (u32, 4 bytes little-endian) at
+ * assignment time.
+ */
+export function assignmentPda(device: PublicKey, sequence: number): PublicKey {
+  const seq = Buffer.alloc(4);
+  seq.writeUInt32LE(sequence, 0);
   const [pda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("assignment"), shipment.toBuffer(), device.toBuffer()],
+    [Buffer.from("assignment"), device.toBuffer(), seq],
     PROGRAM_ID
   );
   return pda;
