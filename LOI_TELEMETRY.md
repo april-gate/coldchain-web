@@ -68,10 +68,14 @@ curl 'localhost:8788/api/readings?shipment_id=ship-001'
 Lets a plain-HTTP device reach the HTTPS site. Runs on your machine, not Cloudflare.
 
 ```bash
-cp local/.env.example local/.env     # set CLOUD_URL, INGEST_KEY, PORT
+cp local/.env.example local/.env     # set CLOUD_URL, INGEST_KEY, SOLANA_RPC_URL, PORT
 node --env-file=local/.env local/gateway.js
-# device posts to  http://<gateway-LAN-ip>:8080/ingest  → forwarded to CLOUD_URL/api/ingest
+# POST http://<gateway-LAN-ip>:8080/ingest  → forwarded to CLOUD_URL/api/ingest
+# POST http://<gateway-LAN-ip>:8080/solana  → {transaction_b64} relayed to SOLANA_RPC_URL
 ```
+
+`SOLANA_RPC_URL` (devnet RPC) is **required** in `local/.env` for the `/solana`
+relay — the gateway fails to start without it.
 
 Best-effort: a failed forward is logged but the device still gets `200`.
 

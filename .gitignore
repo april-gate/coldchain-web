@@ -18,6 +18,8 @@ yarn-error.log*
 local/.env
 .DS_Store
 .dev.vars
+*.zip
+
 
 # Source video masters. The web-ready transcode lives in public/assets/ and IS
 # committed; the full-size originals are not (they also exceed Cloudflare Pages'
@@ -26,3 +28,5 @@ local/.env
 /*.mov
 /*.MOV
 /media/
+/CLAUDE_INSTRUCTIONS
+

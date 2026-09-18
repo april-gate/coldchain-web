@@ -225,8 +225,15 @@
           var res = await fetch("/api/shipments/create", {
             method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
           });
-          var data = await res.json();
-          if (!res.ok || !data.ok) throw new Error((data && data.error) || ("HTTP " + res.status));
+          // Read as text first. If the Functions bundle is missing from the
+          // deployment, Pages' static-asset handler answers /api/* with an empty
+          // 405 (or with index.html), and res.json() dies on "Unexpected end of
+          // JSON input" — hiding the real failure. Report the status instead.
+          var body = await res.text();
+          var data = null;
+          try { data = body ? JSON.parse(body) : null; } catch (_) {}
+          if (!data) throw new Error("Server returned a non-JSON response (HTTP " + res.status + "). The API may not be deployed.");
+          if (!res.ok || !data.ok) throw new Error(data.error || ("HTTP " + res.status));
           // success → detail page with a banner
           window.location.href = "/operator/shipment/" + encodeURIComponent(data.shipment_id) + "?created=1";
         } catch (err) {
