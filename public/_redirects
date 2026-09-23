@@ -5,6 +5,27 @@
 /design-partner   /waitlist   302
 /early-access     /waitlist   302
 
+# ── Demo page: every casing anyone might have been given ──
+# Pages asset paths are CASE-SENSITIVE, and an unmatched path silently serves the
+# homepage instead of 404ing — so a link with the wrong capitalisation looks like
+# the demo simply vanished. The canonical page is /WIPdemo; these send every
+# plausible variant there, including the WIP/MVP mix-up. Sent to investors, so
+# they must not break: add a line rather than assume nobody used that spelling.
+/WIPDemo          /WIPdemo    302
+/WIPDEMO          /WIPdemo    302
+/Wipdemo          /WIPdemo    302
+/wipdemo          /WIPdemo    302
+/wipDemo          /WIPdemo    302
+/MVPdemo          /WIPdemo    302
+/MVPDemo          /WIPdemo    302
+/MVPDEMO          /WIPdemo    302
+/Mvpdemo          /WIPdemo    302
+/mvpdemo          /WIPdemo    302
+/mvpDemo          /WIPdemo    302
+/demo             /WIPdemo    302
+/Demo             /WIPdemo    302
+/DEMO             /WIPdemo    302
+
 # NOTE: /operator/shipment/<id> and /verify/<id> are handled by Pages Functions
 # (functions/operator/shipment/[id].js, functions/verify/[id].js) — NOT by
 # static rewrites, which Pages' clean-URL handling would strip the id from.

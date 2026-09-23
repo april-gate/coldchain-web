@@ -22,6 +22,12 @@ compatibility_flags = ["nodejs_compat"]
 #   npx wrangler d1 execute aprilgate-waitlist --file=./schema.sql          --remote
 #   npx wrangler d1 execute aprilgate-waitlist --file=./schema/loi.sql      --remote
 #   npx wrangler d1 execute aprilgate-waitlist --file=./schema/readings.sql --remote
+#   npx wrangler d1 execute aprilgate-waitlist --file=./schema/readings_v2.sql --remote
+#   npx wrangler d1 execute aprilgate-waitlist --file=./schema/shipments.sql --remote
+#
+# readings_v2.sql adds ingest_v + device_serial and MUST be applied before
+# deploying functions/api/ingest.js or /api/readings — both reference those
+# columns and will 500 against the old table.
 [[d1_databases]]
 binding = "WAITLIST_DB"
 database_name = "aprilgate-waitlist"

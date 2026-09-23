@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-default="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — Shipment Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --mono:'Share Tech Mono',monospace; --display:'Bebas Neue',sans-serif; --body:'DM Sans',sans-serif; }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:var(--body); font-weight:300; line-height:1.7; }
+    .container { max-width:1100px; margin:0 auto; padding:0 2rem; position:relative; z-index:1; }
+
+    nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:1.2rem 2rem; display:flex; align-items:center; justify-content:space-between; background:var(--nav-bg); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+    .nav-logo { font-family:var(--mono); font-size:0.85rem; color:var(--accent); letter-spacing:0.15em; text-transform:uppercase; text-decoration:none; }
+    .nav-mid { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; }
+    .nav-tag { font-family:var(--mono); font-size:0.7rem; color:var(--nav-fg); letter-spacing:0.1em; border:1px solid var(--border); padding:0.3rem 0.8rem; border-radius:2px; text-decoration:none; }
+    .nav-tag:hover,.nav-tag.active { color:var(--accent); border-color:var(--accent); }
+    .nav-cta { font-family:var(--mono); font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; background:var(--accent); color:var(--bg); border:1px solid var(--accent); padding:0.42rem 1.05rem; border-radius:2px; text-decoration:none; font-weight:500; }
+    .btn-signin { font-family:var(--mono); font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); background:transparent; border:1px solid var(--border); padding:0.3rem 0.9rem; border-radius:2px; opacity:0.5; cursor:not-allowed; }
+
+    main { padding:7.5rem 0 4rem; }
+    .crumb { font-family:var(--mono); font-size:0.7rem; color:var(--text-dim); letter-spacing:0.1em; margin-bottom:1rem; }
+    .crumb a { color:var(--accent); text-decoration:none; }
+
+    .head-row { display:flex; justify-content:space-between; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; margin-bottom:0.4rem; }
+    h1 { font-family:var(--display); font-size:clamp(2rem,3.6vw,2.8rem); color:var(--text-bright); letter-spacing:0.02em; line-height:1; }
+    .live { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.12em; color:var(--text-dim); display:flex; align-items:center; gap:0.45rem; }
+    .live .dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim); }
+    .live.ok .dot { background:var(--accent); }
+    .live.bad .dot { background:var(--warn); }
+    .tier-badge { display:inline-block; font-family:var(--mono); font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.2rem 0.6rem; border-radius:2px; border:1px solid; margin-bottom:1.6rem; }
+    .tier-Essential { color:var(--ink-3); border-color:var(--border-2); }
+    .tier-Assured { color:var(--accent); border-color:var(--accent); }
+    .tier-Fortified { color:var(--gold); border-color:var(--gold); }
+    .sub { font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); word-break:break-all; margin-bottom:0.35rem; }
+
+    .card { background:var(--surface); border:1px solid var(--border); padding:1.4rem 1.6rem; margin-bottom:1.4rem; }
+    .card h2 { font-family:var(--mono); font-size:0.72rem; color:var(--accent); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:1.15rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+    .card h2 .note { color:var(--text-dim); letter-spacing:0.08em; text-transform:none; font-size:0.66rem; }
+
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); margin-bottom:1.4rem; }
+    .stat { background:var(--surface); padding:1rem 1.1rem; }
+    .stat .l { font-family:var(--mono); font-size:0.6rem; color:var(--text-dim); letter-spacing:0.14em; text-transform:uppercase; }
+    .stat .v { font-family:var(--display); font-size:1.9rem; color:var(--text-bright); line-height:1.15; }
+    .stat .v.accent { color:var(--accent); }
+    .stat .v.warn { color:var(--warn); }
+    .stat .s { font-family:var(--mono); font-size:0.6rem; color:var(--text-dim); }
+
+    .row { display:flex; justify-content:space-between; gap:1rem; padding:0.55rem 0; border-bottom:1px solid var(--border); }
+    .row:last-child { border-bottom:none; }
+    .row .k { font-family:var(--mono); font-size:0.66rem; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; }
+    .row .v { font-family:var(--mono); font-size:0.82rem; color:var(--text-bright); text-align:right; word-break:break-all; }
+    .row .v a { color:var(--accent); text-decoration:none; }
+
+    .devices { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:0.9rem; }
+    .dev { border:1px solid var(--border); border-left:2px solid var(--accent); padding:0.85rem 1rem; background:var(--bg); }
+    .dev.stale { border-left-color:var(--text-dim); }
+    .dev.excursion { border-left-color:var(--warn); }
+    .dev .id { font-family:var(--mono); font-size:0.66rem; color:var(--text-dim); letter-spacing:0.08em; word-break:break-all; }
+    .dev .t { font-family:var(--display); font-size:1.8rem; color:var(--text-bright); line-height:1.2; }
+    .dev .t.warn { color:var(--warn); }
+    .dev .t.none { font-size:0.8rem; font-family:var(--mono); color:var(--text-dim); }
+    .dev .m { font-family:var(--mono); font-size:0.6rem; color:var(--text-dim); }
+
+    .muted { color:var(--text-dim); font-family:var(--mono); font-size:0.76rem; }
+    .warnbox { border:1px solid var(--warn); color:var(--text-bright); background:var(--warn-bg,transparent); font-family:var(--mono); font-size:0.72rem; padding:0.7rem 0.95rem; margin-bottom:1.4rem; }
+
+    .chartwrap { position:relative; }
+    svg.chart { width:100%; height:230px; display:block; overflow:visible; }
+    .legend { display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.7rem; font-family:var(--mono); font-size:0.62rem; color:var(--text-dim); }
+    .legend i { display:inline-block; width:14px; height:2px; margin-right:0.35rem; vertical-align:middle; }
+
+    table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:0.72rem; }
+    th { text-align:left; color:var(--text-dim); font-weight:400; letter-spacing:0.1em; text-transform:uppercase; font-size:0.6rem; padding:0.4rem 0.6rem; border-bottom:1px solid var(--border); }
+    td { padding:0.4rem 0.6rem; border-bottom:1px solid var(--border); color:var(--text-bright); }
+    td.t { color:var(--accent); }
+    td.t.warn { color:var(--warn); }
+    .tablewrap { max-height:340px; overflow:auto; }
+
+    .actions { display:flex; gap:1rem; flex-wrap:wrap; }
+    .btn-primary { display:inline-flex; align-items:center; gap:0.5rem; background:var(--accent); color:var(--bg); font-family:var(--mono); font-size:0.78rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.8rem 1.5rem; text-decoration:none; clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%); }
+    .btn-secondary { display:inline-flex; align-items:center; gap:0.5rem; background:transparent; color:var(--text); font-family:var(--mono); font-size:0.78rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.8rem 1.5rem; text-decoration:none; border:1px solid var(--border); }
+    .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+    @media (max-width:820px){ .nav-mid .nav-tag{display:none;} }
+  </style>
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+  <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+<body>
+  <nav>
+    <a href="/index.html" class="nav-logo"><img src="/logo.png" alt="April Gate" style="height:34px;width:auto;display:block;border-radius:5px;" /></a>
+    <div class="nav-mid">
+      <a href="/how-it-works.html" class="nav-tag">Legal &amp; Compliance</a>
+      <a href="/verify.html" class="nav-tag">Verify</a>
+      <a href="/team.html" class="nav-tag">Team</a>
+      <a href="/waitlist.html" class="nav-cta">★ Waitlist</a>
+      <a href="/operator/" class="nav-tag active">Operator Portal</a>
+      <button class="theme-toggle" type="button" onclick="toggleTheme()"></button>
+      <button class="btn-signin" type="button" disabled title="Auth coming soon — demo runs unauthenticated" aria-disabled="true">Sign In</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container" id="root">
+      <div class="crumb"><a href="/operator/">← Operator Portal</a></div>
+      <p class="muted">Loading dashboard…</p>
+    </div>
+  </main>
+
+<script>
+/**
+ * April Gate — per-shipment operator dashboard.
+ *
+ * Every number on this page comes from one of exactly two real sources:
+ *   • Solana devnet, read straight from the browser (the shipment account, its
+ *     DeviceAssignment accounts, and each assigned device's DeviceRegistry).
+ *   • D1 telemetry via /api/readings, scoped to this shipment PDA only.
+ *
+ * There is deliberately NO sample data and NO fallback path. If a source is
+ * unreachable the page says so; it never substitutes invented values.
+ *
+ * Device identity is hardware-rooted: a telemetry row is attributed to an
+ * on-chain device only when its `device_serial` matches that device's
+ * DeviceRegistry.device_id. Readings that carry no serial are shown separately
+ * as unattributed — they are NOT folded into a device card.
+ */
+(function () {
+  "use strict";
+
+  var RPC = "https://api.devnet.solana.com";
+  var PROGRAM_ID = "APRBVwwJJeStD5wShyg4HivneDYj4TCPYKtSFX5F4jez";
+  var DISC = {
+    shipment:   [3, 65, 195, 72, 154, 63, 211, 213],
+    registry:   [103, 245, 70, 187, 154, 60, 208, 216],
+    assignment: [15, 80, 106, 22, 229, 11, 63, 194]
+  };
+  var POLL_TELEMETRY_MS = 7000;
+  var POLL_CHAIN_MS = 30000;
+  var STALE_MS = 120000; // no reading in 2 min → device considered not reporting
+
+  // ── base58 ──────────────────────────────────────────────────────────────
+  var ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  function b58encode(bytes) {
+    var digits = [0], i, j, carry;
+    for (i = 0; i < bytes.length; i++) {
+      carry = bytes[i];
+      for (j = 0; j < digits.length; j++) { carry += digits[j] << 8; digits[j] = carry % 58; carry = (carry / 58) | 0; }
+      while (carry) { digits.push(carry % 58); carry = (carry / 58) | 0; }
+    }
+    var out = "";
+    for (i = 0; i < bytes.length && bytes[i] === 0; i++) out += "1";
+    for (j = digits.length - 1; j >= 0; j--) out += ALPHABET[digits[j]];
+    return out;
+  }
+
+  // ── small helpers ───────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function el(id) { return document.getElementById(id); }
+  function b64ToBytes(b64) {
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function hex(bytes) {
+    return Array.prototype.map.call(bytes, function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+  }
+  /** Strip the zero padding the program leaves after a short hardware serial. */
+  function trimSerial(h) { return h.replace(/(00)+$/, ""); }
+  function u32(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+  function i64(b, o) {
+    var v = 0n;
+    for (var i = 7; i >= 0; i--) v = (v << 8n) | BigInt(b[o + i]);
+    if (v >= 1n << 63n) v -= 1n << 64n;
+    return Number(v);
+  }
+  function shortHex(h) { return h ? h.slice(0, 12) + "…" + h.slice(-6) : "—"; }
+  function shortId(s) { return s ? s.slice(0, 8) + "…" + s.slice(-6) : "—"; }
+  function fmtTime(s) {
+    if (!s) return "—";
+    var d = new Date(/\d{4}-\d{2}-\d{2} /.test(s) ? s.replace(" ", "T") + "Z" : s);
+    return isNaN(d) ? String(s) : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+  function fmtDateTime(ms) {
+    if (!ms) return "—";
+    var d = new Date(ms);
+    return isNaN(d) ? "—" : d.toLocaleString();
+  }
+  function msOf(r) {
+    var d = new Date(r.timestamp || (r.received_at ? r.received_at.replace(" ", "T") + "Z" : null));
+    return isNaN(d) ? 0 : d.getTime();
+  }
+
+  /**
+   * Canonical degrees Celsius. `ingest_v` travels with each row precisely so we
+   * never have to guess the scale: 2 = degrees (current firmware contract),
+   * 1/absent = legacy centi-Celsius written before the units fix.
+   */
+  function degC(r) {
+    // A device-reported sensor fault has no temperature. Never coerce it to a
+    // number — a fabricated reading is worse than a visible gap.
+    if (r.sensor_ok === 0) return null;
+    if (typeof r.temp_c !== "number") return null;
+    return (r.ingest_v >= 2) ? r.temp_c : r.temp_c / 100;
+  }
+  function isFault(r) { return r.sensor_ok === 0; }
+
+  async function rpc(method, params) {
+    var res = await fetch(RPC, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: method, params: params })
+    });
+    var j = await res.json();
+    if (j.error) throw new Error(j.error.message || method + " failed");
+    return j.result;
+  }
+
+  // ── account decoders (fixed offsets; layouts in src/idl/device_registry.json) ──
+  function decodeShipment(b) {
+    return {
+      authority: b58encode(b.slice(8, 40)),
+      manifestCommitment: hex(b.slice(72, 104)),
+      proofCount: u32(b, 104),
+      createdAt: i64(b, 140) * 1000,
+      chainHash: hex(b.slice(148, 180)),
+      closed: b[180] === 1
+    };
+  }
+  function decodeAssignment(b) {
+    return {
+      device: b58encode(b.slice(8, 40)),
+      shipment: b58encode(b.slice(40, 72)),
+      sequence: u32(b, 72),
+      assignedAt: i64(b, 108) * 1000,
+      endedAt: i64(b, 116) * 1000,
+      proofCount: u32(b, 124)
+    };
+  }
+  function decodeRegistry(b) {
+    return {
+      authority: b58encode(b.slice(8, 40)),
+      deviceIdHex: trimSerial(hex(b.slice(40, 72))),
+      assignmentCount: u32(b, 105)
+    };
+  }
+
+  // ── state ───────────────────────────────────────────────────────────────
+  var shipmentId = new URLSearchParams(location.search).get("shipment") || "";
+  var meta = null;        // D1 row from /api/shipments/get
+  var chain = null;       // { shipment, devices[] } from devnet
+  var chainError = null;
+  var readings = [];      // newest-first, this shipment only
+  var telemetryError = null;
+  // Each source paints as soon as IT resolves — devnet's getProgramAccounts can
+  // take seconds, and blocking the first paint on it leaves the page looking
+  // empty until something forces a re-render.
+  var chainLoaded = false;
+  var readingsLoaded = false;
+
+  // ── loaders ─────────────────────────────────────────────────────────────
+  async function loadMeta() {
+    try {
+      var r = await fetch("/api/shipments/get?id=" + encodeURIComponent(shipmentId), { cache: "no-store" });
+      var j = await r.json();
+      meta = j.ok ? j.shipment : null;
+    } catch (e) { meta = null; }
+  }
+
+  /**
+   * The device roster, straight off the chain. `assign_device` writes a
+   * DeviceAssignment PDA whose `shipment` field sits at byte 40, so a single
+   * getProgramAccounts with a memcmp on that offset returns exactly the devices
+   * bound to this shipment — nothing app-side is trusted.
+   */
+  async function loadChain() {
+    try {
+      var info = await rpc("getAccountInfo", [shipmentId, { encoding: "base64" }]);
+      if (!info || !info.value) {
+        chain = null;
+        chainError = "No shipment account exists at this address on devnet.";
+        return;
+      }
+      var ship = decodeShipment(b64ToBytes(info.value.data[0]));
+
+      var accounts = await rpc("getProgramAccounts", [PROGRAM_ID, {
+        encoding: "base64",
+        filters: [
+          { memcmp: { offset: 0, bytes: b58encode(DISC.assignment) } },
+          { memcmp: { offset: 40, bytes: shipmentId } }
+        ]
+      }]);
+      var assignments = (accounts || []).map(function (a) {
+        var d = decodeAssignment(b64ToBytes(a.account.data[0]));
+        d.assignmentPda = a.pubkey;
+        return d;
+      });
+
+      // Resolve each assigned device to its hardware serial.
+      var devices = [];
+      if (assignments.length) {
+        var infos = await rpc("getMultipleAccounts", [
+          assignments.map(function (a) { return a.device; }),
+          { encoding: "base64" }
+        ]);
+        devices = assignments.map(function (a, i) {
+          var v = infos && infos.value && infos.value[i];
+          var reg = v ? decodeRegistry(b64ToBytes(v.data[0])) : null;
+          return {
+            devicePda: a.device,
+            assignmentPda: a.assignmentPda,
+            serial: reg ? reg.deviceIdHex : null,
+            sequence: a.sequence,
+            assignedAt: a.assignedAt,
+            endedAt: a.endedAt,
+            proofCount: a.proofCount
+          };
+        });
+        devices.sort(function (x, y) { return x.assignedAt - y.assignedAt; });
+      }
+
+      chain = { shipment: ship, devices: devices };
+      chainError = null;
+    } catch (e) {
+      chain = null;
+      chainError = "Could not reach devnet RPC: " + (e && e.message ? e.message : e);
+    }
+    chainLoaded = true;
+  }
+
+  async function loadReadings() {
+    try {
+      var r = await fetch("/api/readings?shipment_id=" + encodeURIComponent(shipmentId) + "&limit=2000", { cache: "no-store" });
+      var j = await r.json();
+      if (!j.ok) { telemetryError = j.error || "Telemetry unavailable."; }
+      else { readings = j.readings || []; telemetryError = null; }
+    } catch (e) {
+      telemetryError = "Telemetry endpoint unreachable.";
+    }
+    readingsLoaded = true;
+  }
+
+  // ── derived ─────────────────────────────────────────────────────────────
+  function inRange(t) {
+    if (t == null || !meta) return true;
+    if (meta.temp_c_min != null && t < meta.temp_c_min) return false;
+    if (meta.temp_c_max != null && t > meta.temp_c_max) return false;
+    return true;
+  }
+  /** Readings for one on-chain device, matched on hardware serial only. */
+  function readingsFor(serial) {
+    if (!serial) return [];
+    return readings.filter(function (r) {
+      return r.device_serial && trimSerial(String(r.device_serial).toLowerCase()) === serial;
+    });
+  }
+  function unattributed() {
+    var known = (chain && chain.devices || []).map(function (d) { return d.serial; }).filter(Boolean);
+    return readings.filter(function (r) {
+      var s = r.device_serial ? trimSerial(String(r.device_serial).toLowerCase()) : null;
+      return !s || known.indexOf(s) === -1;
+    });
+  }
+
+  // ── render ──────────────────────────────────────────────────────────────
+  function renderStats() {
+    var devices = (chain && chain.devices || []);
+    var reporting = devices.filter(function (d) {
+      var rs = readingsFor(d.serial);
+      return rs.length && (Date.now() - msOf(rs[0])) < STALE_MS;
+    }).length;
+
+    // Sensor faults carry no temperature and must never enter the maths.
+    var temps = readings.map(degC).filter(function (t) { return t != null; });
+    var latest = temps.length ? temps[0] : null;
+    var excursions = temps.filter(function (t) { return !inRange(t); }).length;
+    var faults = readings.filter(isFault).length;
+    var range = meta && meta.temp_c_min != null
+      ? meta.temp_c_min + " to " + meta.temp_c_max + " °C" : "not set";
+
+    el("stats").innerHTML =
+      stat("Devices reporting", chainLoaded ? reporting : "…",
+           chainLoaded ? devices.length + " assigned on-chain" : "reading devnet", reporting ? "accent" : "") +
+      stat("Proofs on-chain", chain ? chain.shipment.proofCount : (chainLoaded ? "—" : "…"),
+           "program-owned count", "accent") +
+      stat("Latest temp", latest == null ? (readingsLoaded ? "—" : "…") : latest.toFixed(2) + "°C",
+           "target: " + range, latest != null && !inRange(latest) ? "warn" : "") +
+      stat("Readings", readingsLoaded ? readings.length : "…", "this shipment only", "") +
+      (faults
+        ? stat("Sensor faults", faults, "no temperature recorded", "warn")
+        : stat("Excursions", excursions, "outside target range", excursions ? "warn" : ""));
+  }
+  function stat(label, value, sub, cls) {
+    return '<div class="stat"><div class="l">' + esc(label) + '</div>' +
+           '<div class="v ' + cls + '">' + esc(value) + '</div>' +
+           '<div class="s">' + esc(sub) + '</div></div>';
+  }
+
+  function renderChainCard() {
+    var body;
+    if (chainError) {
+      body = '<p class="muted">' + esc(chainError) + '</p>';
+    } else if (!chainLoaded) {
+      body = '<p class="muted">Reading devnet…</p>';
+    } else if (!chain) {
+      body = '<p class="muted">No shipment account found at this address on devnet.</p>';
+    } else {
+      var s = chain.shipment;
+      body =
+        row("Status", s.closed ? "Closed" : "Open — accepting proofs") +
+        row("Proof count", String(s.proofCount)) +
+        row("Chain hash", '<span title="' + esc(s.chainHash) + '">' + esc(shortHex(s.chainHash)) + "</span>") +
+        row("Manifest commitment", '<span title="' + esc(s.manifestCommitment) + '">' + esc(shortHex(s.manifestCommitment)) + "</span>") +
+        row("Created on-chain", esc(fmtDateTime(s.createdAt))) +
+        row("Authority", esc(shortId(s.authority))) +
+        row("Create transaction", meta && meta.create_sig
+          ? '<a href="https://explorer.solana.com/tx/' + esc(meta.create_sig) + '?cluster=devnet" target="_blank" rel="noopener">' + esc(meta.create_sig.slice(0, 10)) + "… ↗</a>"
+          : "—") +
+        row("Shipment account", '<a href="https://explorer.solana.com/address/' + esc(shipmentId) + '?cluster=devnet" target="_blank" rel="noopener">view on Solana Explorer ↗</a>');
+    }
+    el("chainCard").innerHTML = '<h2>On-chain <span class="note">devnet · read live in your browser</span></h2>' + body;
+  }
+  function row(k, v) { return '<div class="row"><span class="k">' + esc(k) + '</span><span class="v">' + v + "</span></div>"; }
+
+  function renderDevices() {
+    var html, note = "";
+    if (chainError) {
+      html = '<p class="muted">' + esc(chainError) + "</p>";
+    } else if (!chainLoaded) {
+      html = '<p class="muted">Reading devnet…</p>';
+    } else if (!chain) {
+      html = '<p class="muted">No shipment account found on devnet.</p>';
+    } else if (!chain.devices.length) {
+      html = '<p class="muted">No device is assigned to this shipment on-chain. ' +
+             "A device appears here once it calls <code>assign_device</code> against this shipment PDA.</p>";
+    } else {
+      note = '<span class="note">' + chain.devices.length + " assigned via DeviceAssignment</span>";
+      html = '<div class="devices">' + chain.devices.map(function (d) {
+        var rs = readingsFor(d.serial);
+        var last = rs[0];
+        var t = last ? degC(last) : null;
+        var age = last ? Date.now() - msOf(last) : null;
+        var stale = age == null || age > STALE_MS;
+        var faulted = last ? isFault(last) : false;
+        var bad = t != null && !inRange(t);
+        var cls = (bad || faulted) ? "excursion" : (stale ? "stale" : "");
+        var tempHtml = faulted
+          ? '<div class="t none" style="color:var(--warn)">SENSOR FAULT</div>'
+          : (t == null
+            ? '<div class="t none">' + (d.serial ? "no telemetry linked" : "serial unreadable") + "</div>"
+            : '<div class="t ' + (bad ? "warn" : "") + '">' + t.toFixed(2) + "°C</div>");
+        return '<div class="dev ' + cls + '">' +
+          '<div class="id">' + esc(d.serial ? d.serial : shortId(d.devicePda)) + "</div>" +
+          tempHtml +
+          '<div class="m">' + (last ? Math.round(age / 1000) + "s ago · " + rs.length + " readings" : "awaiting first reading") + "</div>" +
+          '<div class="m">' + d.proofCount + " proof(s) · assigned " + esc(fmtDateTime(d.assignedAt)) +
+            (d.endedAt ? " · ENDED" : "") + "</div>" +
+        "</div>";
+      }).join("") + "</div>";
+
+      var orphans = unattributed();
+      if (orphans.length) {
+        html += '<p class="muted" style="margin-top:1rem">' + orphans.length +
+          " reading(s) could not be attributed to an assigned device — they carry no " +
+          "<code>device_serial</code> matching a DeviceRegistry entry. Shown in the table below, " +
+          "excluded from the cards above.</p>";
+      }
+    }
+    el("deviceCard").innerHTML = '<h2>Devices ' + note + "</h2>" + html;
+  }
+
+  var COLORS = ["var(--accent)", "#f0a202", "#7bc950", "#c05299", "#4fd6ff"];
+
+  function renderChart() {
+    var wrap = el("chartCard");
+    var withTemp = readings.filter(function (r) { return degC(r) != null; });
+    if (withTemp.length < 2) {
+      var nFaults = readings.filter(isFault).length;
+      var msg;
+      if (telemetryError) msg = esc(telemetryError);
+      else if (!readingsLoaded) msg = "Loading telemetry…";
+      else if (nFaults && !withTemp.length) {
+        msg = "No temperature has been measured. " + nFaults + " reading(s) arrived, but the " +
+              "device reported a sensor fault on each — nothing was recorded to plot.";
+      } else {
+        msg = "Not enough readings to plot yet — a line appears once this shipment has two or " +
+              "more measured temperatures.";
+      }
+      wrap.innerHTML = '<h2>Temperature</h2><p class="muted">' + msg + "</p>";
+      return;
+    }
+    // Group by device serial (falling back to the display label) so each device
+    // is its own line rather than one interleaved zig-zag.
+    var groups = {};
+    withTemp.forEach(function (r) {
+      var key = r.device_serial ? trimSerial(String(r.device_serial).toLowerCase())
+                                : (r.device_id || "unattributed");
+      (groups[key] = groups[key] || []).push(r);
+    });
+    var keys = Object.keys(groups);
+    var all = withTemp.map(degC);
+    var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+    if (meta && meta.temp_c_min != null) { lo = Math.min(lo, meta.temp_c_min); hi = Math.max(hi, meta.temp_c_max); }
+    if (hi - lo < 1) { hi += 0.5; lo -= 0.5; }
+    var times = withTemp.map(msOf);
+    var t0 = Math.min.apply(null, times), t1 = Math.max.apply(null, times);
+    if (t1 === t0) t1 = t0 + 1;
+
+    var W = 1000, H = 230, padX = 44, padY = 14;
+    var x = function (ms) { return padX + ((ms - t0) / (t1 - t0)) * (W - padX - 12); };
+    var y = function (t) { return H - padY - ((t - lo) / (hi - lo)) * (H - 2 * padY); };
+
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none">';
+    // Target band from THIS shipment's own limits (not a hardcoded 2–8 °C).
+    if (meta && meta.temp_c_min != null && meta.temp_c_max != null) {
+      svg += '<rect x="' + padX + '" y="' + y(meta.temp_c_max) + '" width="' + (W - padX - 12) +
+             '" height="' + Math.max(1, y(meta.temp_c_min) - y(meta.temp_c_max)) +
+             '" fill="var(--accent)" opacity="0.07"/>';
+    }
+    [lo, (lo + hi) / 2, hi].forEach(function (t) {
+      svg += '<line x1="' + padX + '" y1="' + y(t) + '" x2="' + (W - 12) + '" y2="' + y(t) +
+             '" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"/>' +
+             '<text x="4" y="' + (y(t) + 3) + '" fill="var(--text-dim)" font-size="10" font-family="monospace">' +
+             t.toFixed(1) + "</text>";
+    });
+    keys.forEach(function (k, i) {
+      var pts = groups[k].slice().sort(function (a, b) { return msOf(a) - msOf(b); })
+        .map(function (r) { return x(msOf(r)) + "," + y(degC(r)); }).join(" ");
+      svg += '<polyline fill="none" stroke="' + COLORS[i % COLORS.length] +
+             '" stroke-width="2" vector-effect="non-scaling-stroke" points="' + pts + '"/>';
+    });
+    svg += "</svg>";
+
+    var legend = '<div class="legend">' + keys.map(function (k, i) {
+      return '<span><i style="background:' + COLORS[i % COLORS.length] + '"></i>' + esc(k.length > 20 ? shortHex(k) : k) + "</span>";
+    }).join("") + (meta && meta.temp_c_min != null
+      ? '<span><i style="background:var(--accent);opacity:0.3"></i>target ' + esc(meta.temp_c_min + "–" + meta.temp_c_max + "°C") + "</span>"
+      : "") + "</div>";
+
+    wrap.innerHTML = '<h2>Temperature <span class="note">' + withTemp.length + " reading(s) · " +
+      esc(fmtDateTime(t0)) + " → " + esc(fmtDateTime(t1)) + '</span></h2><div class="chartwrap">' + svg + legend + "</div>";
+  }
+
+  function renderTable() {
+    var body;
+    if (telemetryError) {
+      body = '<p class="muted">' + esc(telemetryError) + "</p>";
+    } else if (!readingsLoaded) {
+      body = '<p class="muted">Loading telemetry…</p>';
+    } else if (!readings.length) {
+      body = '<p class="muted">No telemetry has been received for this shipment. Readings appear here as soon as ' +
+             "a device posts to <code>/api/ingest</code> with this shipment's PDA as <code>shipment_id</code>.</p>";
+    } else {
+      // Only rows that actually carry a temperature can be on the legacy scale.
+      var legacy = readings.filter(function (r) {
+        return !(r.ingest_v >= 2) && !isFault(r) && r.temp_c != null;
+      }).length;
+      body = (legacy ? '<p class="muted" style="margin-bottom:0.7rem">' + legacy +
+                " row(s) predate the units fix and are read as centi-Celsius (ingest_v=1).</p>" : "") +
+        '<div class="tablewrap"><table><thead><tr><th>Device time</th><th>Device</th><th>Temp</th>' +
+        "<th>Proof</th><th>Received</th></tr></thead><tbody>" +
+        readings.slice(0, 200).map(function (r) {
+          var t = degC(r);
+          var bad = t != null && !inRange(t);
+          var cell = isFault(r) ? "SENSOR FAULT" : (t == null ? "—" : t.toFixed(2) + "°C");
+          return "<tr><td>" + esc(fmtTime(r.timestamp)) + "</td>" +
+            "<td>" + esc(r.device_serial ? shortHex(trimSerial(String(r.device_serial))) : (r.device_id || "—")) + "</td>" +
+            '<td class="t ' + (bad || isFault(r) ? "warn" : "") + '">' + cell + "</td>" +
+            "<td>" + (r.proof_count != null ? esc(r.proof_count) : "—") + "</td>" +
+            "<td>" + esc(fmtTime(r.received_at)) + "</td></tr>";
+        }).join("") + "</tbody></table></div>";
+    }
+    el("tableCard").innerHTML = '<h2>Telemetry <span class="note">newest first · this shipment only</span></h2>' + body;
+  }
+
+  function renderLive() {
+    var e = el("live");
+    if (!e) return;
+    var ok = !telemetryError && !chainError;
+    e.className = "live " + (ok ? "ok" : "bad");
+    e.innerHTML = '<span class="dot"></span>' +
+      (ok ? "LIVE · " + fmtTime(new Date().toISOString()) : "SOURCE UNAVAILABLE");
+  }
+
+  function renderAll() {
+    renderStats();
+    renderChainCard();
+    renderDevices();
+    renderChart();
+    renderTable();
+    renderLive();
+  }
+
+  function shell() {
+    var name = meta ? meta.name : "Shipment";
+    var tier = meta ? meta.tier : "";
+    var route = meta && (meta.origin || meta.destination)
+      ? esc(meta.origin || "—") + " → " + esc(meta.destination || "—") : "";
+    el("root").innerHTML =
+      '<div class="crumb"><a href="/operator/">← Operator Portal</a> · ' +
+        '<a href="/operator/shipment/' + encodeURIComponent(shipmentId) + '">Shipment record</a></div>' +
+      '<div class="head-row"><h1>' + esc(name) + '</h1><div class="live" id="live"><span class="dot"></span>connecting…</div></div>' +
+      (tier ? '<span class="tier-badge tier-' + esc(tier) + '">' + esc(tier) + "</span>" : "") +
+      (route ? '<div class="sub">' + route + "</div>" : "") +
+      '<div class="sub">' + esc(shipmentId) + "</div>" +
+      (meta ? "" : '<div class="warnbox">No off-chain metadata found for this shipment id. ' +
+                   "On-chain data below is still authoritative.</div>") +
+      '<div class="stats" id="stats"></div>' +
+      '<div class="card" id="chainCard"></div>' +
+      '<div class="card" id="deviceCard"></div>' +
+      '<div class="card" id="chartCard"></div>' +
+      '<div class="card" id="tableCard"></div>' +
+      '<div class="actions">' +
+        '<a class="btn-primary" href="/verify/' + encodeURIComponent(shipmentId) + '" target="_blank" rel="noopener">Verify Page ↗</a>' +
+        '<a class="btn-secondary" href="/operator/shipment/' + encodeURIComponent(shipmentId) + '">Shipment record</a>' +
+        '<a class="btn-secondary" href="/operator/">Back to list</a>' +
+      "</div>";
+  }
+
+  // ── boot ────────────────────────────────────────────────────────────────
+  if (!shipmentId) {
+    el("root").innerHTML =
+      '<div class="crumb"><a href="/operator/">← Operator Portal</a></div>' +
+      '<h1>Shipment Dashboard</h1>' +
+      '<div class="warnbox">No shipment selected. Open this page from a shipment record, ' +
+      "or append <code>?shipment=&lt;shipment id&gt;</code> to the URL.</div>" +
+      '<div class="actions"><a class="btn-primary" href="/operator/">Choose a shipment</a></div>';
+    return;
+  }
+
+  (async function start() {
+    await loadMeta();
+    shell();
+    renderAll();                                  // paint the frame + loading states now
+    loadReadings().then(renderAll);               // D1 is fast — usually first on screen
+    loadChain().then(renderAll);                  // devnet may take seconds; fills in after
+    setInterval(function () { loadReadings().then(renderAll); }, POLL_TELEMETRY_MS);
+    setInterval(function () { loadChain().then(renderAll); }, POLL_CHAIN_MS);
+  })();
+})();
+</script>
+</body>
+</html>

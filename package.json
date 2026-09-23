@@ -1,14 +1,15 @@
 {
   "name": "coldchain-web",
   "version": "1.0.0",
-  "description": "April Gate — public site and on-chain shipment verifier.",
+  "description": "April Gate \u2014 public site and on-chain shipment verifier.",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "vite build",
     "watch": "vite build --watch",
     "typecheck": "tsc --noEmit",
-    "mint": "tsx scripts/mint-test-shipment.ts"
+    "mint": "tsx scripts/mint-test-shipment.ts",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

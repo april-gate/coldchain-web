@@ -14,8 +14,15 @@
  * via the Anchor client, which pulls Node-only APIs the Workers runtime lacks.
  * web3.js is used only for offline tx assembly/signing; RPC is raw fetch.
  *
+ * manifest_commitment is sha256 of the canonical configuration document — see
+ * public/shared/shipment-config.js. The whole document is committed, including
+ * the shipment_id itself, so every field is tamper-evident and a document
+ * cannot be presented for a different shipment. The document is stored in D1 as
+ * config_json and handed to the recipient; the chain holds only the 32 bytes.
+ *
  * Bindings / secrets:
- *   D1 binding  WAITLIST_DB               -> shipments table (schema/shipments.sql)
+ *   D1 binding  WAITLIST_DB               -> shipments table (schema/shipments.sql
+ *                                             + schema/shipments_v2.sql)
  *   secret      APRILGATE_DEVNET_KEYPAIR  -> JSON array of 64 bytes (solana-keygen output)
  */
 
@@ -25,7 +32,10 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { sha256 } from "@noble/hashes/sha256";
+import {
+  CONFIG_VERSION,
+  configCommitment,
+} from "../../../public/shared/shipment-config.js";
 
 const PROGRAM_ID = new PublicKey("APRBVwwJJeStD5wShyg4HivneDYj4TCPYKtSFX5F4jez");
 const SYSTEM_PROGRAM_ID = new PublicKey("11111111111111111111111111111111");
@@ -81,15 +91,17 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: false, error: "Temperature min cannot exceed max." }, 200);
   }
   const numDevices = parseInt(data.num_devices, 10);
-  if (!Number.isInteger(numDevices) || numDevices < 1) {
-    return json({ ok: false, error: "Number of devices must be a positive integer." }, 200);
+  // Sanity bounds. These values are committed permanently, so a typo'd 100000
+  // is worth rejecting at the door rather than anchoring forever.
+  if (!Number.isInteger(numDevices) || numDevices < 1 || numDevices > 255) {
+    return json({ ok: false, error: "Number of devices must be between 1 and 255." }, 200);
   }
   if (numDevices < TIER_MIN_DEVICES[tier]) {
     return json({ ok: false, error: "Assured and Fortified tiers require a minimum of 4 devices." }, 200);
   }
   const durationDays = parseInt(data.duration_days, 10);
-  if (!Number.isInteger(durationDays) || durationDays < 1) {
-    return json({ ok: false, error: "Duration must be at least 1 day." }, 200);
+  if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 65535) {
+    return json({ ok: false, error: "Duration must be between 1 and 65535 days." }, 200);
   }
 
   const origin = clean(data.origin, 200);
@@ -106,7 +118,7 @@ export async function onRequestPost({ request, env }) {
   // ── Build the on-chain shipment ──
   const rpcUrl = clean(env.SOLANA_RPC_URL) || DEFAULT_RPC_URL;
 
-  let shipmentId, signature, nonce, commitment, authorityB58;
+  let shipmentId, signature, nonce, commitment, authorityB58, configJson;
   let step = "start";
   try {
     console.log("[create] step: load keypair");
@@ -116,15 +128,13 @@ export async function onRequestPost({ request, env }) {
     authorityB58 = authority.publicKey.toBase58();
     console.log("[create] authority", authorityB58);
 
-    // nonce: 32 unguessable bytes.  manifest_commitment: sha256 of the manifest.
+    // nonce: 32 unguessable bytes.
     nonce = crypto.getRandomValues(new Uint8Array(32));
-    const manifest = JSON.stringify({
-      name, tier, temp_c_min: tempMin, temp_c_max: tempMax,
-      num_devices: numDevices, duration_days: durationDays,
-      origin, destination, notes,
-    });
-    commitment = sha256(new TextEncoder().encode(manifest)); // Uint8Array(32)
 
+    // The PDA must be derived BEFORE the commitment, because the configuration
+    // document names the shipment it describes and is hashed with that field in
+    // it. No circularity: the address depends only on authority + nonce, both
+    // known here; the commitment is merely an argument to create_shipment.
     console.log("[create] step: derive PDA");
     step = "derive-pda";
     const [shipmentPda] = PublicKey.findProgramAddressSync(
@@ -133,6 +143,22 @@ export async function onRequestPost({ request, env }) {
     );
     shipmentId = shipmentPda.toBase58();
     console.log("[create] pda", shipmentId);
+
+    // One artifact serves both purposes: this exact object is hashed into
+    // manifest_commitment AND handed to the recipient, so the committed terms
+    // and the disclosed terms cannot drift apart.
+    step = "commitment";
+    const config = {
+      version: CONFIG_VERSION,
+      shipment_id: shipmentId,
+      name, tier,
+      temp_c_min: tempMin, temp_c_max: tempMax,
+      num_devices: numDevices, duration_days: durationDays,
+      origin, destination, notes,
+    };
+    commitment = await configCommitment(config); // Uint8Array(32)
+    configJson = JSON.stringify(config);
+    console.log("[create] commitment", toHex(commitment));
 
     // instruction data = discriminator ‖ nonce ‖ manifest_commitment
     const ixData = new Uint8Array(8 + 32 + 32);
@@ -192,12 +218,13 @@ export async function onRequestPost({ request, env }) {
       `INSERT INTO shipments
          (shipment_id, name, tier, temp_c_min, temp_c_max, num_devices, duration_days,
           origin, destination, notes, nonce_hex, manifest_commitment_hex, create_sig,
-          authority, network, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'devnet', datetime('now'))`
+          authority, config_json, config_version, network, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'v1.0', 'devnet', datetime('now'))`
     )
       .bind(
         shipmentId, name, tier, tempMin, tempMax, numDevices, durationDays,
-        origin, destination, notes, toHex(nonce), toHex(commitment), signature, authorityB58
+        origin, destination, notes, toHex(nonce), toHex(commitment), signature,
+        authorityB58, configJson
       )
       .run();
   } catch (err) {

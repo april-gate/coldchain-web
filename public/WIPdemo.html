@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-default="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>April Gate — Demo (WIP)</title>
+
+  <!--
+    Unlisted page. Reachable only by typing /WIPdemo — nothing on the site links
+    here, and the nav deliberately carries just a home icon.
+
+    "Unlisted" is not "private": anyone with the URL can open it, and any crawler
+    that learns the URL can fetch it. The robots directives below ask search
+    engines to keep it out of results, but they are a request, not access control.
+    If this needs to be genuinely restricted, it needs auth in front of it.
+  -->
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+  <meta name="googlebot" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --mono:'Share Tech Mono',monospace; --display:'Bebas Neue',sans-serif; --body:'DM Sans',sans-serif; }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:var(--body); font-weight:300; line-height:1.7; min-height:100vh; }
+
+    .bar { display:flex; align-items:center; justify-content:space-between; gap:1rem;
+           padding:1.1rem 1.6rem; border-bottom:1px solid var(--border); background:var(--nav-bg); }
+    .home { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px;
+            border:1px solid var(--border); border-radius:2px; color:var(--text-dim); text-decoration:none; transition:0.2s; }
+    .home:hover { color:var(--accent); border-color:var(--accent); }
+    .wip { font-family:var(--mono); font-size:0.62rem; letter-spacing:0.18em; text-transform:uppercase;
+           color:var(--warn); border:1px solid var(--warn); padding:0.25rem 0.7rem; border-radius:2px; }
+
+    main { max-width:1100px; margin:0 auto; padding:2.5rem 1.6rem 4rem; }
+    h1 { font-family:var(--display); font-size:clamp(2rem,4vw,3rem); color:var(--text-bright); letter-spacing:0.02em; line-height:1; }
+    .kicker { font-family:var(--mono); font-size:0.66rem; letter-spacing:0.2em; text-transform:uppercase;
+              color:var(--accent); margin-bottom:0.5rem; }
+    .sub { font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); margin:0.6rem 0 1.8rem; }
+
+    .frame { border:1px solid var(--border); background:#000; line-height:0; }
+    video { width:100%; height:auto; display:block; max-height:78vh; background:#000; }
+
+    .meta { display:flex; gap:1.4rem; flex-wrap:wrap; font-family:var(--mono); font-size:0.62rem;
+            color:var(--text-dim); letter-spacing:0.1em; margin-top:0.9rem; }
+    .fallback { font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); padding:1.2rem; }
+    .fallback a { color:var(--accent); }
+  </style>
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/theme.js"></script>
+  <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+<body>
+  <div class="bar">
+    <a class="home" href="/" title="Home" aria-label="Home">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>
+      </svg>
+    </a>
+    <span class="wip">Work in progress · unlisted</span>
+  </div>
+
+  <main>
+    <div class="kicker">// Demo</div>
+    <h1>April Gate — Intro</h1>
+    <div class="sub">Internal preview. Not linked from anywhere on the site.</div>
+
+    <div class="frame">
+      <video controls playsinline preload="metadata"
+             poster="/assets/aprilgate-first-demo-poster.jpg">
+        <source src="/assets/aprilgate-first-demo.mp4" type="video/mp4" />
+        <p class="fallback">
+          Your browser can't play this video inline.
+          <a href="/assets/aprilgate-first-demo.mp4" download>Download the MP4</a> instead.
+        </p>
+      </video>
+    </div>
+
+    <div class="meta">
+      <span>2 min 23 s</span>
+      <span>1920 × 1080</span>
+      <span>H.264 / AAC</span>
+      <span><a href="/assets/aprilgate-first-demo.mp4" download style="color:var(--accent);text-decoration:none;">Download ↓</a></span>
+    </div>
+  </main>
+</body>
+</html>
