@@ -1000,8 +1000,10 @@
         <h3>Proof Coverage</h3>
         <div class="why">
           A proof count alone proves little. What matters is whether the proofs span
-          the shipment from creation to now, and whether any silent gap sits between
-          them — an unmonitored window is where an excursion hides.
+          the shipment from shipment start to end, and whether any silent gap
+          sits between them — an unmonitored window is where an excursion hides. Time
+          between shipment creation and the first reading is device provisioning and
+          is not counted.
         </div>
         <div class="cov-grid" id="covGrid"></div>
         <div class="cov-bar" id="covBar"><i></i></div>
@@ -1239,7 +1241,7 @@
 
       let verdict;
       try {
-        verdict = await verifyShipment(input);
+        verdict = await verifyShipment(input, { historyUrl: '/api/chain/history' });
       } catch (e) {
         verdict = { status: 'ERROR', shipment: input, proofCount: 0,
                     detail: 'Verification could not run: ' + (e?.message || e) };
@@ -1391,8 +1393,10 @@
       const box = document.getElementById('coverage');
       const grid = document.getElementById('covGrid');
 
-      let sigs = [], before;
-      for (let page = 0; page < 10; page++) {
+      // The verdict already read the full history; only re-read if it couldn't.
+      const known = verdict && verdict.activityTimes && verdict.activityTimes.length;
+      let sigs = known ? verdict.activityTimes.slice() : [], before;
+      for (let page = 0; !known && page < 10; page++) {
         const batch = await rpc('getSignaturesForAddress', [pda, before ? { before, limit: 1000 } : { limit: 1000 }]);
         if (!batch || !batch.length) break;
         for (const s of batch) if (!s.err && s.blockTime) sigs.push(s.blockTime);
@@ -1403,39 +1407,54 @@
 
       sigs.sort((a, b) => a - b);
       const created = sigs[0];                 // create_shipment is the first tx
-      // Transactions after creation are NOT all proofs — assign_device also
-      // touches this PDA. The authoritative count is the one the program keeps
-      // on the Shipment account; signatures are used only for timing.
+      // Creation is not the start of the journey: customers order devices days
+      // ahead and provision them onto the shipment later. Monitoring starts at
+      // the first reading, so only proof timestamps count toward coverage —
+      // create_shipment and assign_device txs are excluded.
       const proofCount = verdict && verdict.proofCount != null ? verdict.proofCount : null;
-      const activity = sigs.slice(1);
+      let proofs = verdict && verdict.proofTimes && verdict.proofTimes.length
+        ? verdict.proofTimes.slice().sort((a, b) => a - b) : [];
+      let approx = false;
+      if (!proofs.length && proofCount > 0 && proofCount < sigs.length) {
+        // Replay unavailable: approximate with the most recent proofCount txs,
+        // since provisioning (create/assign) normally precedes every reading.
+        proofs = sigs.slice(-proofCount);
+        approx = true;
+      }
       const now = Math.floor(Date.now() / 1000);
-      const last = sigs[sigs.length - 1];
+      const anyActivity = proofs.length > 0;
+      const start = anyActivity ? proofs[0] : null;
+      const last = anyActivity ? proofs[proofs.length - 1] : null;
 
       let maxGap = 0;
-      for (let i = 1; i < sigs.length; i++) maxGap = Math.max(maxGap, sigs[i] - sigs[i - 1]);
-      const sinceLast = now - last;
-      const span = last - created;
-      const life = now - created;
-      // Fraction of the shipment's life that sits inside the attested window.
-      const covered = life > 0 ? Math.min(1, span / life) : 0;
-      const anyActivity = activity.length > 0;
+      for (let i = 1; i < proofs.length; i++) maxGap = Math.max(maxGap, proofs[i] - proofs[i - 1]);
+      const sinceLast = anyActivity ? now - last : null;
+      const span = anyActivity ? last - start : 0;
+      const life = anyActivity ? now - start : 0;
+      // Fraction of the monitored period (first reading → now) that is attested.
+      const covered = life > 0 ? Math.min(1, span / life) : (anyActivity ? 1 : 0);
       const stale = anyActivity && sinceLast > Math.max(maxGap * 3, 900);
+      const fmtTs = (t) => new Date(t * 1000).toLocaleString();
 
       grid.innerHTML =
         cov('Proofs', proofCount != null ? proofCount : '—',
             'counted by the program itself', proofCount === 0) +
-        cov('Record starts', new Date(created * 1000).toLocaleString(), 'shipment created on-chain') +
-        cov('Last activity', anyActivity ? new Date(last * 1000).toLocaleString() : '—',
-            anyActivity ? fmtDur(sinceLast) + ' ago' : 'nothing since creation', stale) +
+        cov('Monitoring started', anyActivity ? fmtTs(start) : 'Awaiting first reading',
+            'first device reading' + (approx ? ' (approx.)' : '') +
+            ' · created ' + fmtTs(created) +
+            (anyActivity && start > created ? ', ' + fmtDur(start - created) + ' provisioning not counted' : '')) +
+        cov('Last reading', anyActivity ? fmtTs(last) : '—',
+            anyActivity ? fmtDur(sinceLast) + ' ago' : 'device not yet reporting', stale) +
         cov('Attested span', anyActivity ? fmtDur(span) : '—',
-            'of ' + fmtDur(life) + ' since creation') +
-        cov('Largest gap', anyActivity ? fmtDur(maxGap) : '—', 'longest unattested window',
+            anyActivity ? 'of ' + fmtDur(life) + ' since first reading' : 'starts at first reading') +
+        cov('Largest gap', anyActivity ? fmtDur(maxGap) : '—', 'longest window between readings',
             anyActivity && maxGap > 3600);
 
       document.getElementById('covBar').firstElementChild.style.cssText =
         'left:0;width:' + (covered * 100).toFixed(1) + '%';
-      document.getElementById('covLegend').innerHTML =
-        '<span>CREATED</span><span>' + (covered * 100).toFixed(0) + '% OF ELAPSED TIME ATTESTED</span><span>NOW</span>';
+      document.getElementById('covLegend').innerHTML = anyActivity
+        ? '<span>FIRST READING</span><span>' + (covered * 100).toFixed(0) + '% OF MONITORED TIME ATTESTED</span><span>NOW</span>'
+        : '<span>CREATED</span><span>AWAITING FIRST READING</span><span>NOW</span>';
       box.style.display = 'block';
     }
     function cov(k, v, s, flag) {

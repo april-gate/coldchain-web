@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { makeReadOnlyProgram, fetchShipment, fetchProofs } from "./solana";
+import { makeReadOnlyProgram, fetchShipment, fetchHistory, decodeProofs } from "./solana";
 import { recomputeChain, bytesEqual, toHex } from "./chainHash";
 import { shipmentPda } from "./pdas";
 
@@ -18,11 +18,21 @@ export interface Verdict {
   proofCount: number;
   onChainChainHash?: string; // hex
   recomputedChainHash?: string; // hex
+  // Unix seconds of each decoded proof, ascending. The first one is when the
+  // shipment actually started being monitored — creation is just provisioning.
+  proofTimes?: number[];
+  // Unix seconds of every successful tx on the shipment (create, assign, proofs),
+  // ascending — lets the page draw coverage without re-reading the chain.
+  activityTimes?: number[];
+  historySource?: "proxy" | "rpc";
   detail: string; // human-readable, safe to show insurers/lawyers
 }
 
 export interface VerifyOptions {
   rpcUrl?: string;
+  // Same-origin history proxy (functions/api/chain/history.js), e.g.
+  // "/api/chain/history". Falls back to rpcUrl when absent or unavailable.
+  historyUrl?: string;
 }
 
 const DEFAULT_RPC = "https://api.devnet.solana.com";
@@ -77,9 +87,17 @@ export async function verifyShipment(
     // Best-effort integrity replay: reconstruct the chain from decoded events.
     // May be unavailable if the (public) RPC pruned tx history or events don't
     // decode — in which case the account count above is still authoritative.
-    let proofs: Awaited<ReturnType<typeof fetchProofs>> = [];
+    let proofs: ReturnType<typeof decodeProofs> = [];
+    let activityTimes: number[] | undefined;
+    let historySource: "proxy" | "rpc" | undefined;
     try {
-      proofs = await fetchProofs(program, pda);
+      const history = await fetchHistory(program.provider.connection, pda, opts.historyUrl);
+      historySource = history.source;
+      activityTimes = history.txs
+        .map((t) => t.blockTime)
+        .filter((t): t is number => t != null)
+        .sort((a, b) => a - b);
+      proofs = decodeProofs(program, pda, history.txs);
     } catch {
       proofs = [];
     }
@@ -100,6 +118,12 @@ export async function verifyShipment(
         proofCount: onChainCount,
         onChainChainHash: toHex(onChain),
         recomputedChainHash: toHex(recomputed),
+        proofTimes: proofs
+          .map((p) => p.blockTime)
+          .filter((t): t is number => t != null)
+          .sort((a, b) => a - b),
+        activityTimes,
+        historySource,
         detail: ok
           ? `Verified. ${onChainCount} proof(s) form an unbroken chain anchored on Solana; the record has not been altered.`
           : `The on-chain chain hash does not match a clean replay of the ${proofs.length} decoded proof(s). This shipment's record may have been altered, reordered, or is incomplete.`,
@@ -114,6 +138,8 @@ export async function verifyShipment(
         shipment: pda.toBase58(),
         proofCount: onChainCount,
         onChainChainHash: toHex(onChain),
+        activityTimes,
+        historySource,
         detail:
           `${onChainCount} proof(s) recorded on-chain — count verified from the ` +
           `program-owned shipment account. Full integrity replay was unavailable ` +
@@ -128,6 +154,8 @@ export async function verifyShipment(
       shipment: pda.toBase58(),
       proofCount: 0,
       onChainChainHash: toHex(onChain),
+      activityTimes,
+      historySource,
       detail: "Shipment found on-chain. No proofs have been anchored to it yet.",
     };
   } catch (e) {
