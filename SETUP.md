@@ -19,6 +19,10 @@ cat /tmp/aprilgate-devnet.json | npx wrangler pages secret put APRILGATE_DEVNET_
 #    Get a free devnet URL from Helius / QuickNode / Alchemy, then:
 npx wrangler pages secret put SOLANA_RPC_URL --project-name aprilgate
 #    (paste e.g. https://devnet.helius-rpc.com/?api-key=...)
+#    Use Helius specifically if you want a fast Verify page: /api/chain/history
+#    (functions/api/chain/history.js) calls the Helius-only
+#    getTransactionsForAddress. With any other provider it returns 502 and the
+#    page falls back to public RPC, which rate-limits large shipments.
 ```
 
 - Never log the keypair, never expose it via any endpoint. It is read only inside
