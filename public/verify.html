@@ -867,7 +867,6 @@
     .windows li:last-child { border-bottom:none; }
     .windows .win { font-family:var(--display); font-weight:700; font-size:1.02rem; color:var(--ink-max); }
     .windows .n { display:inline-block; min-width:1.6rem; }
-    .windows .meta { font-family:var(--mono); font-size:0.72rem; color:var(--ink-soft); white-space:nowrap; }
     .windows .exc { font-family:var(--mono); font-size:0.8rem; color:var(--ink-max); background:var(--accent-dim); }
     .windows .empty { font-family:var(--mono); font-size:0.8rem; color:var(--ink-soft); }
 
@@ -1228,10 +1227,9 @@
         const m = window.location.pathname.match(/^\/verify\/(.+?)\/?$/);
         if (m) shipment = decodeURIComponent(m[1]);
       }
-      if (shipment) {
-        document.getElementById('verifyInput').value = shipment;
-        verify();
-      }
+      // Fill the ID but do not verify: the verifier decides what to check and in
+      // which order (e.g. the shipment configuration first, or not at all).
+      if (shipment) document.getElementById('verifyInput').value = shipment;
       // Get Manifest needs BOTH a shipment to look up and text to hash, so it
       // stays disabled until each is present. Wired here rather than inline so
       // the programmatic prefill above is picked up too — assigning .value does
@@ -1240,7 +1238,9 @@
         document.getElementById(id).addEventListener('input', syncManifestGate));
       syncManifestGate();
       document.getElementById('verifyInput').addEventListener('input', scheduleMonitoring);
+      document.getElementById('configInput').addEventListener('input', () => { cfgAuto = false; });
       loadMonitoring();
+      loadConfig();
     });
 
     function syncManifestGate() {
@@ -1412,12 +1412,14 @@
     const REPORTING_INTERVAL_S = 15;                    // demo: hardcoded; next MVP reads it from the shipment config
     const WINDOW_BREAK_S = 4 * REPORTING_INTERVAL_S;    // 1 min: network delay never splits a window
 
-    // 24-hour clock, minute precision: "HH:MM DD/MM/YYYY" in the viewer's zone.
+    // 24-hour clock, minute precision: "HH:MM DD/MM/YYYY UTC". Always UTC so every
+    // party reading the report — shipper, insurer, court — sees the same times,
+    // and every stamp carries its zone so none can be quoted without it.
     const pad2 = (n) => String(n).padStart(2, '0');
     const fmtMin = (t) => {
       const d = new Date(t * 1000);
-      return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' ' +
-             pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear();
+      return pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes()) + ' ' +
+             pad2(d.getUTCDate()) + '/' + pad2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear() + ' UTC';
     };
     // "N hours and n minutes", leaving out a zero hours part. Counted between
     // the minute-precision times shown, so the duration always matches them.
@@ -1425,10 +1427,6 @@
       const m = Math.floor((from + sec) / 60) - Math.floor(from / 60), h = Math.floor(m / 60), mm = m % 60;
       const mins = mm + ' minute' + (mm === 1 ? '' : 's');
       return h ? h + ' hour' + (h === 1 ? '' : 's') + ' and ' + mins : mins;
-    };
-    const zoneLabel = () => {
-      const m = -new Date().getTimezoneOffset();
-      return 'UTC' + (m >= 0 ? '+' : '−') + pad2(Math.floor(Math.abs(m) / 60)) + ':' + pad2(Math.abs(m) % 60);
     };
 
     async function renderCoverage(pda, verdict) {
@@ -1467,8 +1465,8 @@
         ? windows.map((w, i) => {
             const win =
               '<li><span class="win"><span class="n">' + (i + 1) + '.</span>From: ' + fmtMin(w.from) +
-              ' To: ' + fmtMin(w.to) + '</span> <span class="meta">' + w.n + ' proof' + (w.n === 1 ? '' : 's') +
-              ' at ' + REPORTING_INTERVAL_S + ' second intervals</span></li>';
+              ' To: ' + fmtMin(w.to) + ', ' + w.n + ' proof' + (w.n === 1 ? '' : 's') +
+              ' at ' + REPORTING_INTERVAL_S + 's intervals</span></li>';
             const next = windows[i + 1];
             return win + (next
               ? '<li class="exc">Excursion from ' + fmtMin(w.to) + ' To: ' + fmtMin(next.from) +
@@ -1513,11 +1511,40 @@
       document.getElementById('monStop').textContent =
         last == null ? '—' : (stopped ? fmtMin(last) : 'Still reporting');
       document.getElementById('monNote').textContent =
-        'From April Gate device telemetry, to the minute (' + zoneLabel() + '). Not a blockchain record.';
+        'From April Gate device telemetry, to the minute. Not a blockchain record.';
       box.hidden = false;
     }
     let monTimer;
-    function scheduleMonitoring() { clearTimeout(monTimer); monTimer = setTimeout(loadMonitoring, 350); }
+    function scheduleMonitoring() {
+      clearTimeout(monTimer);
+      monTimer = setTimeout(() => { loadMonitoring(); loadConfig(); }, 350);
+    }
+
+    /**
+     * Convenience: pre-paste the shipment configuration April Gate stored at
+     * creation. Never overwrites text the verifier typed or pasted, and never
+     * runs the check by itself.
+     */
+    let cfgAuto = false, cfgSeq = 0;
+    async function loadConfig() {
+      const pda = document.getElementById('verifyInput').value.trim();
+      const ta = document.getElementById('configInput');
+      const seq = ++cfgSeq;
+      if (ta.value.trim() && !cfgAuto) return;        // the verifier's own text wins
+      let doc = null;
+      if (isAddress(pda)) {
+        try {
+          const r = await fetch('/api/shipments/get?id=' + encodeURIComponent(pda), { cache: 'no-store' });
+          const j = await r.json();
+          if (j && j.ok && j.shipment && j.shipment.config_json) doc = JSON.parse(j.shipment.config_json);
+        } catch { /* no stored copy: leave the field for pasting */ }
+      }
+      if (seq !== cfgSeq || (ta.value.trim() && !cfgAuto)) return;
+      ta.value = doc ? JSON.stringify(doc, null, 2) : '';
+      cfgAuto = !!doc;
+      document.getElementById('manifestOut').innerHTML = '';
+      syncManifestGate();
+    }
 
     function renderResult(v) {
       const result = document.getElementById('verifyResult');
@@ -1567,7 +1594,7 @@
       document.getElementById('rProofs').textContent = (v.proofCount ?? '—');
       document.getElementById('rChainHash').textContent = short(v.onChainChainHash);
       document.getElementById('rRecomputed').textContent = short(v.recomputedChainHash);
-      document.getElementById('rTime').textContent = new Date().toLocaleString();
+      document.getElementById('rTime').textContent = fmtMin(Math.floor(Date.now() / 1000));
 
       const hashEl = document.getElementById('rTxHash');
       const link = document.getElementById('rTxLink');
