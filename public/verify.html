@@ -764,7 +764,7 @@
     }
 
     /* ── Hero: the instruction is the headline ── */
-    [data-page="verify"] .hero { padding:3.5rem 2rem 2.25rem; }
+    [data-page="verify"] .hero { padding:2.5rem 2rem 1.75rem; }
     .hero-kicker {
       font-family:var(--mono); font-size:0.66rem; letter-spacing:0.32em;
       text-transform:uppercase; color:var(--ink-faint);
@@ -785,10 +785,26 @@
     }
 
     /* ── Fields: thick rules, unmissable labels ── */
+    /* Two columns: Verify and its result on the left, so the verdict appears
+       right under the button without scrolling; the configuration check — a
+       separate, occasional task — sits alongside on the right. Stacks on narrow
+       screens with Verify first. */
     .verify-sheet {
-      max-width:820px; margin:0 auto 4rem; position:relative; z-index:1;
-      background:var(--paper-2); border:3px solid var(--rule); padding:2.5rem 2.5rem 2rem;
+      max-width:1200px; margin:0 auto 4rem; position:relative; z-index:1;
+      background:var(--paper-2); border:3px solid var(--rule); padding:2.25rem 2.5rem 2rem;
       box-shadow:10px 10px 0 var(--rule);
+      display:grid; grid-template-columns:minmax(0,1.75fr) minmax(0,1fr); gap:0 2.5rem;
+    }
+    .verify-main, .verify-side { min-width:0; }
+    .verify-side { border-left:2px solid var(--rule); padding-left:2.5rem; }
+    .verify-side .field-label { font-size:clamp(1.1rem,2vw,1.35rem); }
+    [data-page="verify"] .verify-result { margin-top:0; padding-top:1.25rem; }
+    [data-page="verify"] .verify-result .plain-english-box { margin-bottom:1.25rem; }
+    [data-page="verify"] .verify-result .result-grid { margin-top:1.5rem; }
+    [data-page="verify"] .verify-result .chain-proof-row { margin-top:1rem; }
+    @media (max-width:900px) {
+      .verify-sheet { grid-template-columns:1fr; }
+      .verify-side { border-left:none; padding-left:0; border-top:2px solid var(--rule); padding-top:2rem; margin-top:1rem; }
     }
     .field { margin-bottom:2.25rem; }
     .field:last-of-type { margin-bottom:1.25rem; }
@@ -841,17 +857,19 @@
       font-family:var(--display); font-weight:700; font-size:1.15rem; letter-spacing:0.1em;
       text-transform:uppercase; margin-bottom:0.2rem; color:var(--ink-max);
     }
-    .coverage .why { font-size:0.86rem; color:var(--ink-soft); margin-bottom:0.9rem; }
-    .cov-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.9rem; }
-    .cov { border:2px solid var(--rule); padding:0.7rem 0.85rem; }
-    .cov .k { font-family:var(--mono); font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); }
-    .cov .v { font-family:var(--display); font-weight:700; font-size:1.35rem; line-height:1.25; color:var(--ink-max); }
-    .cov .v.flag { color:#c0271c; }
-    .cov .s { font-family:var(--mono); font-size:0.62rem; color:var(--ink-faint); }
-    .cov-bar { margin-top:1rem; height:16px; border:2px solid var(--rule); position:relative; overflow:hidden; }
-    .cov-bar i { position:absolute; top:0; bottom:0; background:var(--rule); }
-    .cov-bar-legend { display:flex; justify-content:space-between; font-family:var(--mono);
-                      font-size:0.6rem; color:var(--ink-faint); margin-top:0.3rem; letter-spacing:0.1em; }
+    .monitoring { display:grid; grid-template-columns:1fr 1fr; gap:0.9rem; margin-top:1.25rem; }
+    .mon { border:2px solid var(--rule); padding:0.7rem 0.85rem; }
+    .mon .k, .windows .k { font-family:var(--mono); font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); }
+    .mon .v { font-family:var(--display); font-weight:700; font-size:1.2rem; line-height:1.3; color:var(--ink-max); }
+    .mon-note { grid-column:1 / -1; font-family:var(--mono); font-size:0.62rem; color:var(--ink-faint); }
+    .windows { list-style:none; margin:0.6rem 0 0; padding:0; border:2px solid var(--rule); }
+    .windows li { padding:0.6rem 0.85rem; border-bottom:1px solid var(--rule); line-height:1.6; }
+    .windows li:last-child { border-bottom:none; }
+    .windows .win { font-family:var(--display); font-weight:700; font-size:1.02rem; color:var(--ink-max); }
+    .windows .n { display:inline-block; min-width:1.6rem; }
+    .windows .meta { font-family:var(--mono); font-size:0.72rem; color:var(--ink-soft); white-space:nowrap; }
+    .windows .exc { font-family:var(--mono); font-size:0.8rem; color:var(--ink-max); background:var(--accent-dim); }
+    .windows .empty { font-family:var(--mono); font-size:0.8rem; color:var(--ink-soft); }
 
     @media (max-width:640px) {
       .verify-sheet { padding:1.6rem 1.25rem; box-shadow:6px 6px 0 var(--rule); }
@@ -906,6 +924,7 @@
 
   <!-- VERIFY SHEET -->
   <div class="verify-sheet">
+   <div class="verify-main">
 
     <div class="field">
       <label class="field-label" for="verifyInput">Shipment ID</label>
@@ -926,30 +945,13 @@
           No account required. Independently checkable on Solana.
         </span>
       </div>
-    </div>
-
-    <div class="field">
-      <label class="field-label" for="configInput">Shipment Configuration</label>
-      <div class="field-hint">
-        Obtain shipment configuration from the shipper and paste it here. April Gate
-        hashes it in your browser and compares that hash against the manifest
-        commitment the blockchain has held since the shipment was created. If the
-        shipper altered the terms afterwards, the two will not match.
+      <!-- Device monitoring window, from April Gate telemetry (off-chain). Shown
+           as soon as a Shipment ID is entered — it does not need Verify. -->
+      <div class="monitoring" id="monitoring" hidden>
+        <div class="mon"><div class="k">Device monitoring started</div><div class="v" id="monStart">—</div></div>
+        <div class="mon"><div class="k">Device monitoring stopped</div><div class="v" id="monStop">—</div></div>
+        <div class="mon-note" id="monNote">From April Gate device telemetry, to the minute. Not a blockchain record.</div>
       </div>
-      <textarea
-        class="input-major"
-        id="configInput"
-        spellcheck="false"
-        placeholder='{"name":"...","tier":"...","temp_c_min":2,"temp_c_max":8,...}'
-      ></textarea>
-      <div class="field-actions">
-        <button class="btn-major btn-ghost" id="manifestBtn" onclick="checkManifest()" disabled
-                title="Enter a Shipment ID above and paste the configuration to enable">Get Manifest</button>
-        <span class="field-hint" id="manifestGate" style="margin:0;">
-          Needs both a Shipment ID and a pasted configuration.
-        </span>
-      </div>
-      <div class="manifest-out" id="manifestOut"></div>
     </div>
 
     <!-- RESULT -->
@@ -962,6 +964,23 @@
           <div class="result-subline" id="resultSubline">All sensors in agreement · No tampering detected</div>
         </div>
       </div>
+
+      <div class="plain-english-box" id="plainEnglishBox">
+        <strong>In plain English:</strong>
+        The sensors aboard this shipment independently measured and agreed on temperature conditions throughout transit.
+        A mathematical certificate of that agreement was recorded permanently on the Solana blockchain.
+        This certificate cannot be altered, backdated, or disputed — it is as permanent as any record can be.
+      </div>
+
+      <!-- Compliance windows: runs of compliant readings anchored on Solana.
+           Deliberately no start/end/handover claims — the chain cannot attest
+           those; the verifier compares these windows with their own handover
+           records. -->
+      <div class="coverage" id="coverage" style="display:none;">
+        <h3>Windows of temperature compliance:</h3>
+        <ol class="windows" id="covWindows"></ol>
+      </div>
+
 
       <div class="result-grid" id="resultGrid">
         <div class="result-cell">
@@ -994,36 +1013,40 @@
         </div>
       </div>
 
-      <!-- Proof coverage: a count on its own says nothing about whether the
-           record covers the journey. This is where that gets answered. -->
-      <div class="coverage" id="coverage" style="display:none;">
-        <h3>Proof Coverage</h3>
-        <div class="why">
-          A proof count alone proves little. What matters is whether the proofs span
-          the shipment from shipment start to end, and whether any silent gap
-          sits between them — an unmonitored window is where an excursion hides. Time
-          between shipment creation and the first reading is device provisioning and
-          is not counted.
-        </div>
-        <div class="cov-grid" id="covGrid"></div>
-        <div class="cov-bar" id="covBar"><i></i></div>
-        <div class="cov-bar-legend" id="covLegend"><span>—</span><span>—</span></div>
-      </div>
-
       <div class="chain-proof-row">
         <div class="chain-proof-label">// BLOCKCHAIN RECORD</div>
         <div class="chain-proof-hash" id="rTxHash">—</div>
         <a class="chain-proof-link" id="rTxLink" href="#" target="_blank">VIEW ON SOLANA →</a>
       </div>
 
-      <div class="plain-english-box" id="plainEnglishBox">
-        <strong>In plain English:</strong>
-        The sensors aboard this shipment independently measured and agreed on temperature conditions throughout transit.
-        A mathematical certificate of that agreement was recorded permanently on the Solana blockchain.
-        This certificate cannot be altered, backdated, or disputed — it is as permanent as any record can be.
-      </div>
-
     </div>
+   </div>
+
+   <div class="verify-side">
+    <div class="field">
+      <label class="field-label" for="configInput">Shipment Configuration</label>
+      <div class="field-hint">
+        Uses the Shipment ID on the left. Obtain shipment configuration from the shipper and paste it here. April Gate
+        hashes it in your browser and compares that hash against the manifest
+        commitment the blockchain has held since the shipment was created. If the
+        shipper altered the terms afterwards, the two will not match.
+      </div>
+      <textarea
+        class="input-major"
+        id="configInput"
+        spellcheck="false"
+        placeholder='{"name":"...","tier":"...","temp_c_min":2,"temp_c_max":8,...}'
+      ></textarea>
+      <div class="field-actions">
+        <button class="btn-major btn-ghost" id="manifestBtn" onclick="checkManifest()" disabled
+                title="Enter a Shipment ID and paste the configuration to enable">Get Manifest</button>
+        <span class="field-hint" id="manifestGate" style="margin:0;">
+          Needs both a Shipment ID and a pasted configuration.
+        </span>
+      </div>
+      <div class="manifest-out" id="manifestOut"></div>
+    </div>
+   </div>
   </div>
 
   <!-- HOW IT WORKS -->
@@ -1216,6 +1239,8 @@
       ['verifyInput', 'configInput'].forEach((id) =>
         document.getElementById(id).addEventListener('input', syncManifestGate));
       syncManifestGate();
+      document.getElementById('verifyInput').addEventListener('input', scheduleMonitoring);
+      loadMonitoring();
     });
 
     function syncManifestGate() {
@@ -1227,7 +1252,7 @@
       gate.style.display = ready ? 'none' : '';
       gate.textContent = !hasId && !hasCfg
         ? 'Needs both a Shipment ID and a pasted configuration.'
-        : (!hasId ? 'Enter the Shipment ID above.' : 'Paste the shipment configuration.');
+        : (!hasId ? 'Enter the Shipment ID first.' : 'Paste the shipment configuration.');
     }
     window.syncManifestGate = syncManifestGate;
 
@@ -1253,6 +1278,7 @@
 
       // Coverage is a second, independent read — never let it break the verdict.
       if (verdict.status !== 'ERROR') renderCoverage(input, verdict).catch(() => {});
+      loadMonitoring();
     }
     window.verify = verify;
 
@@ -1376,92 +1402,122 @@
     window.checkManifest = checkManifest;
 
     /**
-     * Proof coverage. Every transaction touching the shipment PDA carries a
-     * blockTime, so the ledger itself tells us when the record starts, when it
-     * ends, and where the silences are. The largest gap is the number that
-     * matters: it is the longest window in which nothing was being attested.
+     * Compliance windows. Proofs anchor compliant readings only, so a run of
+     * proofs at the reporting interval is a window of compliance. A spacing of
+     * more than WINDOW_BREAK ends one window and starts the next. We report the
+     * windows and nothing else: when the shipment started, ended or changed
+     * hands is not something the chain attests — the verifier compares these
+     * windows with their own handover records.
      */
-    const fmtDur = (s) => {
-      if (s == null) return '—';
-      if (s < 60) return Math.round(s) + 's';
-      if (s < 3600) return Math.round(s / 60) + 'm';
-      if (s < 86400) return (s / 3600).toFixed(1) + 'h';
-      return (s / 86400).toFixed(1) + 'd';
+    const REPORTING_INTERVAL_S = 15;                    // demo: hardcoded; next MVP reads it from the shipment config
+    const WINDOW_BREAK_S = 4 * REPORTING_INTERVAL_S;    // 1 min: network delay never splits a window
+
+    // 24-hour clock, minute precision: "HH:MM DD/MM/YYYY" in the viewer's zone.
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const fmtMin = (t) => {
+      const d = new Date(t * 1000);
+      return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ' ' +
+             pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear();
+    };
+    // "N hours and n minutes", leaving out a zero hours part. Counted between
+    // the minute-precision times shown, so the duration always matches them.
+    const fmtHM = (sec, from) => {
+      const m = Math.floor((from + sec) / 60) - Math.floor(from / 60), h = Math.floor(m / 60), mm = m % 60;
+      const mins = mm + ' minute' + (mm === 1 ? '' : 's');
+      return h ? h + ' hour' + (h === 1 ? '' : 's') + ' and ' + mins : mins;
+    };
+    const zoneLabel = () => {
+      const m = -new Date().getTimezoneOffset();
+      return 'UTC' + (m >= 0 ? '+' : '−') + pad2(Math.floor(Math.abs(m) / 60)) + ':' + pad2(Math.abs(m) % 60);
     };
 
     async function renderCoverage(pda, verdict) {
       const box = document.getElementById('coverage');
-      const grid = document.getElementById('covGrid');
+      const list = document.getElementById('covWindows');
 
-      // The verdict already read the full history; only re-read if it couldn't.
-      const known = verdict && verdict.activityTimes && verdict.activityTimes.length;
-      let sigs = known ? verdict.activityTimes.slice() : [], before;
-      for (let page = 0; !known && page < 10; page++) {
-        const batch = await rpc('getSignaturesForAddress', [pda, before ? { before, limit: 1000 } : { limit: 1000 }]);
-        if (!batch || !batch.length) break;
-        for (const s of batch) if (!s.err && s.blockTime) sigs.push(s.blockTime);
-        before = batch[batch.length - 1].signature;
-        if (batch.length < 1000) break;
-      }
-      if (!sigs.length) { box.style.display = 'none'; return; }
-
-      sigs.sort((a, b) => a - b);
-      const created = sigs[0];                 // create_shipment is the first tx
-      // Creation is not the start of the journey: customers order devices days
-      // ahead and provision them onto the shipment later. Monitoring starts at
-      // the first reading, so only proof timestamps count toward coverage —
-      // create_shipment and assign_device txs are excluded.
-      const proofCount = verdict && verdict.proofCount != null ? verdict.proofCount : null;
       let proofs = verdict && verdict.proofTimes && verdict.proofTimes.length
         ? verdict.proofTimes.slice().sort((a, b) => a - b) : [];
-      let approx = false;
-      if (!proofs.length && proofCount > 0 && proofCount < sigs.length) {
+      const proofCount = verdict && verdict.proofCount != null ? verdict.proofCount : 0;
+      if (!proofs.length && proofCount > 0) {
         // Replay unavailable: approximate with the most recent proofCount txs,
         // since provisioning (create/assign) normally precedes every reading.
-        proofs = sigs.slice(-proofCount);
-        approx = true;
+        const known = verdict && verdict.activityTimes && verdict.activityTimes.length;
+        let sigs = known ? verdict.activityTimes.slice() : [], before;
+        for (let page = 0; !known && page < 10; page++) {
+          const batch = await rpc('getSignaturesForAddress', [pda, before ? { before, limit: 1000 } : { limit: 1000 }]);
+          if (!batch || !batch.length) break;
+          for (const s of batch) if (!s.err && s.blockTime) sigs.push(s.blockTime);
+          before = batch[batch.length - 1].signature;
+          if (batch.length < 1000) break;
+        }
+        sigs.sort((a, b) => a - b);
+        if (proofCount < sigs.length) proofs = sigs.slice(-proofCount);
       }
-      const now = Math.floor(Date.now() / 1000);
-      const anyActivity = proofs.length > 0;
-      const start = anyActivity ? proofs[0] : null;
-      const last = anyActivity ? proofs[proofs.length - 1] : null;
 
-      let maxGap = 0;
-      for (let i = 1; i < proofs.length; i++) maxGap = Math.max(maxGap, proofs[i] - proofs[i - 1]);
-      const sinceLast = anyActivity ? now - last : null;
-      const span = anyActivity ? last - start : 0;
-      const life = anyActivity ? now - start : 0;
-      // Fraction of the monitored period (first reading → now) that is attested.
-      const covered = life > 0 ? Math.min(1, span / life) : (anyActivity ? 1 : 0);
-      const stale = anyActivity && sinceLast > Math.max(maxGap * 3, 900);
-      const fmtTs = (t) => new Date(t * 1000).toLocaleString();
+      // Proofs every REPORTING_INTERVAL_S make one continuous window; a longer
+      // silence between compliant proofs is, by construction, an excursion.
+      const windows = [];
+      for (const t of proofs) {
+        const w = windows[windows.length - 1];
+        if (w && t - w.to <= WINDOW_BREAK_S) { w.to = t; w.n++; }
+        else windows.push({ from: t, to: t, n: 1 });
+      }
 
-      grid.innerHTML =
-        cov('Proofs', proofCount != null ? proofCount : '—',
-            'counted by the program itself', proofCount === 0) +
-        cov('Monitoring started', anyActivity ? fmtTs(start) : 'Awaiting first reading',
-            'first device reading' + (approx ? ' (approx.)' : '') +
-            ' · created ' + fmtTs(created) +
-            (anyActivity && start > created ? ', ' + fmtDur(start - created) + ' provisioning not counted' : '')) +
-        cov('Last reading', anyActivity ? fmtTs(last) : '—',
-            anyActivity ? fmtDur(sinceLast) + ' ago' : 'device not yet reporting', stale) +
-        cov('Attested span', anyActivity ? fmtDur(span) : '—',
-            anyActivity ? 'of ' + fmtDur(life) + ' since first reading' : 'starts at first reading') +
-        cov('Largest gap', anyActivity ? fmtDur(maxGap) : '—', 'longest window between readings',
-            anyActivity && maxGap > 3600);
-
-      document.getElementById('covBar').firstElementChild.style.cssText =
-        'left:0;width:' + (covered * 100).toFixed(1) + '%';
-      document.getElementById('covLegend').innerHTML = anyActivity
-        ? '<span>FIRST READING</span><span>' + (covered * 100).toFixed(0) + '% OF MONITORED TIME ATTESTED</span><span>NOW</span>'
-        : '<span>CREATED</span><span>AWAITING FIRST READING</span><span>NOW</span>';
+      list.innerHTML = windows.length
+        ? windows.map((w, i) => {
+            const win =
+              '<li><span class="win"><span class="n">' + (i + 1) + '.</span>From: ' + fmtMin(w.from) +
+              ' To: ' + fmtMin(w.to) + '</span> <span class="meta">' + w.n + ' proof' + (w.n === 1 ? '' : 's') +
+              ' at ' + REPORTING_INTERVAL_S + ' second intervals</span></li>';
+            const next = windows[i + 1];
+            return win + (next
+              ? '<li class="exc">Excursion from ' + fmtMin(w.to) + ' To: ' + fmtMin(next.from) +
+                ' for ' + fmtHM(next.from - w.to, w.to) + '</li>'
+              : '');
+          }).join('')
+        : '<li class="empty">No compliant readings have been anchored for this shipment yet.</li>';
       box.style.display = 'block';
     }
-    function cov(k, v, s, flag) {
-      return '<div class="cov"><div class="k">' + k + '</div>' +
-             '<div class="v' + (flag ? ' flag' : '') + '">' + v + '</div>' +
-             '<div class="s">' + s + '</div></div>';
+
+    /**
+     * Device monitoring window from April Gate telemetry (D1, off-chain) —
+     * the first and last reading of any kind, compliant or not. Local data,
+     * shown as soon as a Shipment ID is entered; Verify is not needed. With a
+     * 15 s interval, "stopped" is only known once readings have been silent
+     * for a while, so both ends are given to the minute.
+     */
+    const isAddress = (v) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(v);
+    const rxTime = (row) => {
+      const t = row && row.received_at ? Date.parse(row.received_at.replace(' ', 'T') + 'Z') : NaN;
+      return Number.isFinite(t) ? Math.floor(t / 1000) : null;
+    };
+    async function edgeReading(pda, order) {
+      const r = await fetch('/api/readings?shipment_id=' + encodeURIComponent(pda) +
+                            '&order=' + order + '&limit=1', { cache: 'no-store' });
+      const j = await r.json();
+      return j && j.ok && j.readings && j.readings.length ? rxTime(j.readings[0]) : null;
     }
+    let monSeq = 0;
+    async function loadMonitoring() {
+      const pda = document.getElementById('verifyInput').value.trim();
+      const box = document.getElementById('monitoring');
+      const seq = ++monSeq;
+      if (!isAddress(pda)) { box.hidden = true; return; }
+      let first = null, last = null;
+      try { [first, last] = await Promise.all([edgeReading(pda, 'asc'), edgeReading(pda, 'desc')]); }
+      catch { /* telemetry unavailable: show dashes */ }
+      if (seq !== monSeq) return;                     // a newer ID was typed meanwhile
+      const now = Math.floor(Date.now() / 1000);
+      const stopped = last != null && now - last > WINDOW_BREAK_S;
+      document.getElementById('monStart').textContent = first != null ? fmtMin(first) : 'No readings yet';
+      document.getElementById('monStop').textContent =
+        last == null ? '—' : (stopped ? fmtMin(last) : 'Still reporting');
+      document.getElementById('monNote').textContent =
+        'From April Gate device telemetry, to the minute (' + zoneLabel() + '). Not a blockchain record.';
+      box.hidden = false;
+    }
+    let monTimer;
+    function scheduleMonitoring() { clearTimeout(monTimer); monTimer = setTimeout(loadMonitoring, 350); }
 
     function renderResult(v) {
       const result = document.getElementById('verifyResult');

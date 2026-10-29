@@ -1,6 +1,9 @@
 /**
  * April Gate — telemetry read endpoint (dashboard polls this).
- * Cloudflare Pages Function.  Route: GET /api/readings?shipment_id=<id>&limit=<n>
+ * Cloudflare Pages Function.  Route: GET /api/readings?shipment_id=<id>&limit=<n>[&order=asc]
+ *
+ * Newest first by default. `order=asc` returns the oldest rows first — the
+ * verify page uses it to find a shipment's first reading, compliant or not.
  *
  * Public read is fine for the demo. Returns ONLY reading fields — never LOI or
  * any other table's data.
@@ -33,6 +36,7 @@ export async function onRequestGet({ request, env }) {
   // Per-shipment dashboards want the whole run, not a 200-row tail.
   const requested = parseInt(params.get("limit"), 10);
   const limit = Number.isInteger(requested) && requested > 0 ? Math.min(requested, 2000) : 200;
+  const order = params.get("order") === "asc" ? "ASC" : "DESC";
   if (!env.WAITLIST_DB) {
     console.error("WAITLIST_DB binding is not configured.");
     return json({ ok: false, error: "Storage not configured." }, 500);
@@ -44,7 +48,7 @@ export async function onRequestGet({ request, env }) {
               temp_c, ingest_v, sensor_ok, received_at
          FROM readings
         WHERE shipment_id = ?
-        ORDER BY id DESC
+        ORDER BY id ${order}
         LIMIT ?`
     ).bind(shipmentId, limit).all();
 
