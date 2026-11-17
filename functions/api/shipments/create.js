@@ -108,6 +108,23 @@ export async function onRequestPost({ request, env }) {
   const destination = clean(data.destination, 200);
   const notes = clean(data.notes, 2000);
 
+  // ── Optional traceability (FSMA 204) fields, config v2.0 ──
+  // Anchored like every other config field. Ship-from / ship-to are origin and
+  // destination. Ship date and actual location will come from device
+  // timestamps and GPS in the cellular build — not collected here.
+  // TODO(per-client): there is no per-client field customization yet; when it
+  // exists, gate this section per client.
+  const traceabilityLotCode = clean(data.traceability_lot_code, 100);
+  const product = clean(data.product, 200);
+  const quantityUnit = clean(data.quantity_unit, 30);
+  let quantity = null;
+  if (data.quantity != null && String(data.quantity).trim() !== "") {
+    quantity = Number(data.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return json({ ok: false, error: "Quantity must be a positive number." }, 200);
+    }
+  }
+
   if (!env.APRILGATE_DEVNET_KEYPAIR) {
     return json({ ok: false, error: "Custodial wallet not configured (APRILGATE_DEVNET_KEYPAIR)." }, 200);
   }
@@ -156,6 +173,12 @@ export async function onRequestPost({ request, env }) {
       num_devices: numDevices, duration_days: durationDays,
       origin, destination, notes,
     };
+    // Blank optional fields are left out of the stored document too, so the
+    // JSON handed to the recipient matches its canonical form.
+    if (traceabilityLotCode) config.traceability_lot_code = traceabilityLotCode;
+    if (product) config.product = product;
+    if (quantity !== null) config.quantity = quantity;
+    if (quantityUnit) config.quantity_unit = quantityUnit;
     commitment = await configCommitment(config); // Uint8Array(32)
     configJson = JSON.stringify(config);
     console.log("[create] commitment", toHex(commitment));
@@ -219,12 +242,12 @@ export async function onRequestPost({ request, env }) {
          (shipment_id, name, tier, temp_c_min, temp_c_max, num_devices, duration_days,
           origin, destination, notes, nonce_hex, manifest_commitment_hex, create_sig,
           authority, config_json, config_version, network, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'v1.0', 'devnet', datetime('now'))`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'devnet', datetime('now'))`
     )
       .bind(
         shipmentId, name, tier, tempMin, tempMax, numDevices, durationDays,
         origin, destination, notes, toHex(nonce), toHex(commitment), signature,
-        authorityB58, configJson
+        authorityB58, configJson, CONFIG_VERSION
       )
       .run();
   } catch (err) {

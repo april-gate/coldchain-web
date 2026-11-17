@@ -50,6 +50,19 @@
     .form-toperror { display:none; font-family:var(--mono); font-size:0.72rem; color:var(--danger); background:var(--danger-bg); border:1px solid var(--danger); padding:0.75rem 1rem; border-radius:2px; margin-bottom:1.4rem; }
     .form-toperror.show { display:block; }
 
+    .trace { border:1px solid var(--border); border-radius:2px; margin-bottom:1.4rem; }
+    .trace > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:0.7rem; padding:0.85rem 1rem; font-family:var(--mono); font-size:0.72rem; color:var(--text2); letter-spacing:0.12em; text-transform:uppercase; }
+    .trace > summary::-webkit-details-marker { display:none; }
+    .trace > summary::before { content:"▸"; color:var(--accent); transition:transform .15s; }
+    .trace[open] > summary::before { transform:rotate(90deg); }
+    .trace > summary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .wip-badge { font-size:0.6rem; letter-spacing:0.08em; color:var(--accent); border:1px solid var(--accent); padding:0.1rem 0.45rem; border-radius:2px; text-transform:none; }
+    .trace-body { padding:0 1rem 0.4rem; }
+    .trace-body > .helper { margin:0 0 1.1rem; }
+    .trace-route { font-family:var(--mono); font-size:0.72rem; color:var(--text-dim); margin-bottom:1.2rem; line-height:1.8; }
+    .trace-route b { color:var(--text-bright); font-weight:400; }
+    .qty-row { display:grid; grid-template-columns:2fr 1fr; gap:1rem; }
+
     @media (max-width:820px){ .nav-mid .nav-tag{display:none;} .two-col{grid-template-columns:1fr;} }
   </style>
   <link rel="stylesheet" href="/theme.css">
@@ -140,6 +153,42 @@
           <textarea id="notes" rows="3" placeholder="Cargo description, special handling, container details, contacts, anything else."></textarea>
         </div>
 
+        <!-- Optional traceability fields (FSMA 204 shipping KDEs). Collapsed by
+             default so non-food clients can ignore it. Anchored with the rest of
+             the config (config v2.0). Ship date / actual location will come from
+             device timestamps and GPS in the cellular build.
+             TODO(per-client): no per-client field customization exists yet; when
+             it does, show this section per client. -->
+        <details class="trace" id="traceSection">
+          <summary>Traceability (FSMA 204) <span class="wip-badge">Work in progress</span></summary>
+          <div class="trace-body">
+            <p class="helper">Stays private. Included in the shipment's on-chain proof.</p>
+            <div class="field">
+              <label for="tlc">Traceability lot code <span class="opt">(optional)</span></label>
+              <input type="text" id="tlc" maxlength="100" placeholder="e.g., LOT-2026-1104-A" />
+            </div>
+            <div class="field">
+              <label for="product">Product description / product ID <span class="opt">(optional)</span></label>
+              <input type="text" id="product" maxlength="200" placeholder="e.g., Romaine hearts, 3-pack · GTIN 00012345678905" />
+            </div>
+            <div class="qty-row">
+              <div class="field">
+                <label for="quantity">Quantity <span class="opt">(optional)</span></label>
+                <input type="number" id="quantity" min="0" step="any" placeholder="e.g., 120" />
+                <span class="field-error" id="err-quantity">Quantity must be a positive number.</span>
+              </div>
+              <div class="field">
+                <label for="quantityUnit">Unit <span class="opt">(optional)</span></label>
+                <input type="text" id="quantityUnit" maxlength="30" placeholder="e.g., cases" />
+              </div>
+            </div>
+            <div class="trace-route">
+              Ship-from: <b id="traceFrom">—</b><br />
+              Ship-to: <b id="traceTo">—</b>
+            </div>
+          </div>
+        </details>
+
         <button type="submit" class="submit-btn" id="submitBtn">Create Shipment</button>
       </form>
     </div>
@@ -179,6 +228,15 @@
       tempPreset.addEventListener("change", onPresetChange);
       onTierChange(); onPresetChange();
 
+      // Ship-from / ship-to are the config's origin and destination; mirror them.
+      function syncRoute(){
+        el("traceFrom").textContent = el("origin").value.trim() || "—";
+        el("traceTo").textContent = el("destination").value.trim() || "—";
+      }
+      el("origin").addEventListener("input", syncRoute);
+      el("destination").addEventListener("input", syncRoute);
+      syncRoute();
+
       function resolveTemp(){
         if (tempPreset.value === "custom") {
           var mn = parseFloat(el("tempMin").value), mx = parseFloat(el("tempMax").value);
@@ -208,6 +266,12 @@
         var badDur = !Number.isInteger(dur) || dur < 1;
         setError("duration", badDur); if (badDur) ok = false;
 
+        var qtyRaw = el("quantity").value.trim();
+        var qty = qtyRaw === "" ? null : Number(qtyRaw);
+        var badQty = qty !== null && !(Number.isFinite(qty) && qty > 0);
+        setError("quantity", badQty);
+        if (badQty) { ok = false; el("traceSection").open = true; }
+
         if (!ok) return;
 
         var payload = {
@@ -216,7 +280,11 @@
           num_devices: nd, duration_days: dur,
           origin: el("origin").value.trim(),
           destination: el("destination").value.trim(),
-          notes: el("notes").value.trim()
+          notes: el("notes").value.trim(),
+          traceability_lot_code: el("tlc").value.trim(),
+          product: el("product").value.trim(),
+          quantity: qty,
+          quantity_unit: el("quantityUnit").value.trim()
         };
 
         submitBtn.disabled = true; var orig = submitBtn.textContent;

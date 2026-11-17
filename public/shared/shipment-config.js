@@ -22,17 +22,28 @@
  * numbers without breaking verification.
  *
  * ── VERSIONING ────────────────────────────────────────────────────────────
- * v1.0 IS FROZEN. Never change FIELD_ORDER, the coercions, or CONFIG_VERSION.
- * When the document needs new fields, add a v2.0 branch alongside this one and
- * dispatch on `version` at the call site: shipments committed under v1.0 must
- * stay verifiable forever, including after v2.0 ships.
+ * v1.0 IS FROZEN. Never change FIELD_ORDER, the coercions, or V1's rules.
+ * Every shipment created before v2.0 is anchored on-chain under v1.0 and is
+ * used in live demos: those documents must canonicalize, display and verify
+ * exactly as they always have. canonicalConfigString dispatches on the
+ * document's own `version`, so v1.0 and v2.0 documents coexist forever.
+ *
+ * v2.0 = every v1.0 field, same order, same rules, followed by OPTIONAL
+ * traceability fields (FSMA 204 key data elements for a shipping event).
+ * An optional field that is absent, null, or blank (empty / whitespace-only
+ * string) is OMITTED from the canonical string — never serialized as "" —
+ * so "not filled in" has exactly one canonical form.
  *
  * This file is served publicly and has no dependencies, so a third party can
  * fetch it and reproduce any commitment without trusting April Gate.
- * test/shipment-config.test.mjs pins the expected string and hash.
+ * test/shipment-config.test.mjs pins the expected strings and hashes.
  */
 
-export const CONFIG_VERSION = "v1.0";
+/** The version new shipments are created with. */
+export const CONFIG_VERSION = "v2.0";
+
+/** Every version this module can canonicalize. Never remove one. */
+export const SUPPORTED_CONFIG_VERSIONS = ["v1.0", "v2.0"];
 
 /**
  * The committed fields, in the only order that may ever be serialized.
@@ -58,6 +69,40 @@ const FIELD_ORDER = [
 ];
 
 /**
+ * v2.0 only: optional traceability fields, appended after FIELD_ORDER in this
+ * fixed order. Ship-from / ship-to are NOT repeated here — they are `origin`
+ * and `destination` above.
+ *
+ * Not yet included: ship date, traceability lot code source, and reference
+ * document. Ship date and actual location will come from device timestamps and
+ * GPS in the cellular build, not from operator input.
+ */
+const TRACEABILITY_FIELDS = [
+  ["traceability_lot_code", "str"],
+  ["product", "str"],          // product description or product ID
+  ["quantity", "num"],
+  ["quantity_unit", "str"],    // unit of measure, e.g. "cases", "kg"
+];
+
+/** Exported so pages can display the traceability fields of a document. */
+export const TRACEABILITY_KEYS = TRACEABILITY_FIELDS.map(([k]) => k);
+
+function coerce(key, kind, raw) {
+  if (kind === "num") {
+    const n = typeof raw === "string" ? Number(raw) : raw;
+    if (typeof n !== "number" || !Number.isFinite(n)) {
+      throw new TypeError(`shipment configuration field "${key}" must be a number`);
+    }
+    return n;
+  }
+  return String(raw);
+}
+
+function isBlank(raw) {
+  return raw === undefined || raw === null || (typeof raw === "string" && raw.trim() === "");
+}
+
+/**
  * Rebuild the document in canonical form and return the exact string to hash.
  * Throws if a committed field is absent — a missing field must never be
  * silently defaulted, because that would let two different shipments produce
@@ -67,26 +112,28 @@ export function canonicalConfigString(config) {
   if (!config || typeof config !== "object" || Array.isArray(config)) {
     throw new TypeError("shipment configuration must be a JSON object");
   }
-  if (config.version !== CONFIG_VERSION) {
+  if (!SUPPORTED_CONFIG_VERSIONS.includes(config.version)) {
     throw new TypeError(
-      `shipment configuration version must be "${CONFIG_VERSION}", got ${JSON.stringify(config.version)}`
+      `shipment configuration version must be one of ${SUPPORTED_CONFIG_VERSIONS.map((v) => `"${v}"`).join(", ")}, ` +
+      `got ${JSON.stringify(config.version)}`
     );
   }
 
+  // v1.0 and v2.0 share these fields and rules exactly.
   const canonical = {};
   for (const [key, kind] of FIELD_ORDER) {
     const raw = config[key];
     if (raw === undefined || raw === null) {
       throw new TypeError(`shipment configuration is missing "${key}"`);
     }
-    if (kind === "num") {
-      const n = typeof raw === "string" ? Number(raw) : raw;
-      if (typeof n !== "number" || !Number.isFinite(n)) {
-        throw new TypeError(`shipment configuration field "${key}" must be a number`);
-      }
-      canonical[key] = n;
-    } else {
-      canonical[key] = String(raw);
+    canonical[key] = coerce(key, kind, raw);
+  }
+
+  if (config.version === "v2.0") {
+    for (const [key, kind] of TRACEABILITY_FIELDS) {
+      const raw = config[key];
+      if (isBlank(raw)) continue;            // omitted, never ""
+      canonical[key] = coerce(key, kind, raw);
     }
   }
   return JSON.stringify(canonical);
