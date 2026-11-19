@@ -100,16 +100,28 @@
       function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
       window.copyId = function(btn, id){ navigator.clipboard.writeText(id).then(function(){var t=btn.textContent;btn.textContent="✓";setTimeout(function(){btn.textContent=t;},1200);}); };
 
-      // The disclosure document, exactly as create_shipment stored it. Served
-      // from D1 rather than rebuilt here: the commitment is sha256(borsh(...))
-      // over ShipmentConfigV1, and a second reconstruction of this JSON is a
-      // second chance to drift from what was actually committed.
+      // The config document, exactly as create_shipment stored it, for EVERY
+      // version (v1.0, v2.0, …). Display must never depend on the version: v1.0
+      // shipments are anchored on devnet and used in demos. Served from D1
+      // rather than rebuilt here, so what is shown is what was committed.
       function manifestJson(s){
         if (s.config_json) {
           try { return JSON.stringify(JSON.parse(s.config_json), null, 2); }
           catch (e) { return s.config_json; }
         }
         return null;   // pre-V1 shipment: nothing canonical to hand over
+      }
+
+      // Optional traceability rows (config v2.0). Empty for v1.0 documents.
+      function traceRows(s){
+        var doc; try { doc = s.config_json ? JSON.parse(s.config_json) : null; } catch (e) { doc = null; }
+        if (!doc) return "";
+        var qty = doc.quantity != null ? String(doc.quantity) + (doc.quantity_unit ? " " + doc.quantity_unit : "") : (doc.quantity_unit || "");
+        var out = "";
+        if (doc.traceability_lot_code) out += row("Traceability lot code", esc(doc.traceability_lot_code));
+        if (doc.product) out += row("Product", esc(doc.product));
+        if (qty) out += row("Quantity", esc(qty));
+        return out;
       }
       window.copyManifest = function(btn){
         var t = document.getElementById("manifestJson").textContent;
@@ -240,6 +252,7 @@
                 row("Origin", esc(s.origin||"—")) +
                 row("Destination", esc(s.destination||"—")) +
                 row("Notes", esc(s.notes||"—")) +
+                traceRows(s) +
                 row("Created", esc(s.created_at)) +
               '</div>' +
               '<div class="card"><h2>On-chain</h2>' +
@@ -254,9 +267,8 @@
               '<div class="card"><h2>Shipment Configuration</h2>' +
                 (manifestJson(s)
                   ? '<p class="muted" style="margin-bottom:0.9rem">Share with verifiers to enable independent ' +
-                    'verification. Only the compliance fields (temperature range, devices, consensus, duration) ' +
-                    'are hashed into the on-chain commitment — name, origin, destination and notes are not, and ' +
-                    'are disclosed only because you choose to send this document.</p>' +
+                    'verification. This whole document is hashed into the on-chain commitment; only that ' +
+                    'hash is on-chain, never the document itself.</p>' +
                     '<pre id="manifestJson" style="font-family:var(--mono);font-size:0.7rem;color:var(--text-bright);' +
                     'background:var(--bg);border:1px solid var(--border);padding:0.85rem;overflow-x:auto;' +
                     'white-space:pre-wrap;word-break:break-word;margin-bottom:0.8rem;">'+esc(manifestJson(s))+'</pre>' +

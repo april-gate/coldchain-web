@@ -939,13 +939,14 @@
         onkeydown="if(event.key==='Enter') verify()"
       />
       <div class="field-actions">
-        <button class="btn-major" id="verifyBtn" onclick="verify()">Verify</button>
-        <span class="field-hint" style="margin:0;">
-          No account required. Independently checkable on Solana.
+        <button class="btn-major" id="verifyBtn" onclick="verify()" disabled
+                title="Validate the shipment configuration first">Verify</button>
+        <span class="field-hint" id="verifyGate" style="margin:0;">
+          Validate the shipment configuration first (Get Manifest).
         </span>
       </div>
       <!-- Device monitoring window, from April Gate telemetry (off-chain). Shown
-           as soon as a Shipment ID is entered — it does not need Verify. -->
+           only once the shipment configuration has been validated. -->
       <div class="monitoring" id="monitoring" hidden>
         <div class="mon"><div class="k">Device monitoring started</div><div class="v" id="monStart">—</div></div>
         <div class="mon"><div class="k">Device monitoring stopped</div><div class="v" id="monStop">—</div></div>
@@ -1210,7 +1211,7 @@
     import { verifyShipment } from '/assets/aprilgate.js';
     // Canonicalization is a public, dependency-free module served as-is, so a
     // third party can fetch it and reproduce any commitment without trusting us.
-    import { CONFIG_VERSION, configCommitmentHex } from '/shared/shipment-config.js';
+    import { SUPPORTED_CONFIG_VERSIONS, TRACEABILITY_KEYS, configCommitmentHex } from '/shared/shipment-config.js';
 
     const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g,
       (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -1235,13 +1236,42 @@
       // the programmatic prefill above is picked up too — assigning .value does
       // not fire an input event.
       ['verifyInput', 'configInput'].forEach((id) =>
-        document.getElementById(id).addEventListener('input', syncManifestGate));
+        document.getElementById(id).addEventListener('input', () => {
+          syncManifestGate();
+          setValidated(null);   // any edit re-locks Verify until re-validated
+        }));
       syncManifestGate();
-      document.getElementById('verifyInput').addEventListener('input', scheduleMonitoring);
-      document.getElementById('configInput').addEventListener('input', () => { cfgAuto = false; });
-      loadMonitoring();
-      loadConfig();
+      setValidated(null);
     });
+
+    /**
+     * Verify gate. Verify (chain replay + telemetry) stays disabled until the
+     * pasted configuration has been checked against the on-chain manifest for
+     * THIS shipment ID and matched. Only people the shipper gave the config to
+     * can get that far, and casual visitors cannot trigger the heavy reads.
+     * NOTE: this is a UI gate, not a defense on its own — the APIs still need
+     * server-side rate limiting.
+     */
+    let validatedPda = null;
+    function setValidated(pda) {
+      validatedPda = pda;
+      const ok = !!pda;
+      const btn = document.getElementById('verifyBtn');
+      btn.disabled = !ok;
+      btn.title = ok ? '' : 'Validate the shipment configuration first';
+      document.getElementById('verifyGate').textContent = ok
+        ? 'Configuration validated. Independently checkable on Solana.'
+        : 'Validate the shipment configuration first (Get Manifest).';
+      if (ok) { loadMonitoring(); return; }
+      // Locked: hide everything a previous validated Verify revealed, including
+      // the "View on Solana" link, so nothing outlives the config that unlocked it.
+      ++monSeq;
+      document.getElementById('monitoring').hidden = true;
+      document.getElementById('verifyResult').classList.remove('show');
+      document.getElementById('coverage').style.display = 'none';
+    }
+    const isValidated = () =>
+      !!validatedPda && validatedPda === document.getElementById('verifyInput').value.trim();
 
     function syncManifestGate() {
       const hasId = document.getElementById('verifyInput').value.trim() !== '';
@@ -1258,7 +1288,7 @@
 
     async function verify() {
       const input = document.getElementById('verifyInput').value.trim();
-      if (!input) return;
+      if (!input || !isValidated()) return;   // Enter key goes through here too
 
       const btn = document.getElementById('verifyBtn');
       btn.disabled = true;
@@ -1272,9 +1302,11 @@
                     detail: 'Verification could not run: ' + (e?.message || e) };
       }
 
+      btn.textContent = 'Verify';
+      // Inputs changed while verifying: the lock is back on, show nothing.
+      if (!isValidated() || document.getElementById('verifyInput').value.trim() !== input) return;
       renderResult(verdict);
       btn.disabled = false;
-      btn.textContent = 'Verify';
 
       // Coverage is a second, independent read — never let it break the verdict.
       if (verdict.status !== 'ERROR') renderCoverage(input, verdict).catch(() => {});
@@ -1319,9 +1351,9 @@
      * document or reordering its keys cannot break the check; changing any
      * committed value will.
      *
-     * Dispatch is on the document's own `version`. When v2.0 lands it gets its
-     * own branch here and v1.0 stays exactly as it is, so shipments committed
-     * today keep verifying forever.
+     * Dispatch is on the document's own `version` (inside the shared module).
+     * v1.0 and v2.0 are both accepted; v1.0 shipments — the ones already
+     * anchored on devnet and used in demos — verify exactly as they always have.
      */
     async function commitmentFromDocument(text) {
       let doc;
@@ -1330,10 +1362,10 @@
       if (!doc || typeof doc !== 'object' || Array.isArray(doc)) {
         throw new Error('the configuration must be a JSON object');
       }
-      if (doc.version !== CONFIG_VERSION) {
+      if (!SUPPORTED_CONFIG_VERSIONS.includes(doc.version)) {
         throw new Error(
           `this document declares version ${JSON.stringify(doc.version)}; ` +
-          `this page verifies ${CONFIG_VERSION}`);
+          `this page verifies ${SUPPORTED_CONFIG_VERSIONS.join(' and ')}`);
       }
       return { hex: await configCommitmentHex(doc), doc };
     }
@@ -1369,6 +1401,28 @@
         // reader guessing which of the two is wrong.
         const wrongShipment = doc.shipment_id && doc.shipment_id !== pda;
         const match = computed === chainHex;
+        setValidated(match && !wrongShipment ? pda : null);
+
+        // Traceability fields (v2.0, optional). Shown only if the document has them.
+        const TRACE_LABELS = {
+          traceability_lot_code: 'Traceability lot code',
+          product: 'Product',
+          quantity: 'Quantity',
+          quantity_unit: 'Unit',
+        };
+        const traceRows = doc.version === 'v2.0'
+          ? TRACEABILITY_KEYS
+              .filter(k => doc[k] != null && String(doc[k]).trim() !== '')
+              .map(k => '<div><span>' + TRACE_LABELS[k] + '</span><span>' + esc(doc[k]) + '</span></div>')
+          : [];
+        if (traceRows.length) {
+          traceRows.push('<div><span>Ship-from</span><span>' + esc(doc.origin || '—') + '</span></div>');
+          traceRows.push('<div><span>Ship-to</span><span>' + esc(doc.destination || '—') + '</span></div>');
+        }
+        const traceHtml = traceRows.length
+          ? '<div class="field-hint" style="margin-top:0.9rem;">Traceability</div>' +
+            '<div class="manifest-rows">' + traceRows.join('') + '</div>'
+          : '';
 
         out.innerHTML =
           '<div class="manifest-verdict ' + (match ? 'match' : 'nomatch') + '">' +
@@ -1383,6 +1437,7 @@
             '<div><span>On-chain commitment</span><span>' + chainHex + '</span></div>' +
             '<div><span>Recomputed from document</span><span>' + computed + '</span></div>' +
           '</div>' +
+          traceHtml +
           '<div class="field-hint" style="margin-top:0.7rem;">' +
             (match
               ? 'Every term in this document — route, temperature range, devices, duration and ' +
@@ -1500,7 +1555,7 @@
       const pda = document.getElementById('verifyInput').value.trim();
       const box = document.getElementById('monitoring');
       const seq = ++monSeq;
-      if (!isAddress(pda)) { box.hidden = true; return; }
+      if (!isAddress(pda) || !isValidated()) { box.hidden = true; return; }
       let first = null, last = null;
       try { [first, last] = await Promise.all([edgeReading(pda, 'asc'), edgeReading(pda, 'desc')]); }
       catch { /* telemetry unavailable: show dashes */ }
@@ -1514,37 +1569,9 @@
         'From April Gate device telemetry, to the minute. Not a blockchain record.';
       box.hidden = false;
     }
-    let monTimer;
-    function scheduleMonitoring() {
-      clearTimeout(monTimer);
-      monTimer = setTimeout(() => { loadMonitoring(); loadConfig(); }, 350);
-    }
-
-    /**
-     * Convenience: pre-paste the shipment configuration April Gate stored at
-     * creation. Never overwrites text the verifier typed or pasted, and never
-     * runs the check by itself.
-     */
-    let cfgAuto = false, cfgSeq = 0;
-    async function loadConfig() {
-      const pda = document.getElementById('verifyInput').value.trim();
-      const ta = document.getElementById('configInput');
-      const seq = ++cfgSeq;
-      if (ta.value.trim() && !cfgAuto) return;        // the verifier's own text wins
-      let doc = null;
-      if (isAddress(pda)) {
-        try {
-          const r = await fetch('/api/shipments/get?id=' + encodeURIComponent(pda), { cache: 'no-store' });
-          const j = await r.json();
-          if (j && j.ok && j.shipment && j.shipment.config_json) doc = JSON.parse(j.shipment.config_json);
-        } catch { /* no stored copy: leave the field for pasting */ }
-      }
-      if (seq !== cfgSeq || (ta.value.trim() && !cfgAuto)) return;
-      ta.value = doc ? JSON.stringify(doc, null, 2) : '';
-      cfgAuto = !!doc;
-      document.getElementById('manifestOut').innerHTML = '';
-      syncManifestGate();
-    }
+    // No config pre-fill. The shipment configuration is private to the
+    // shipper, who shares it with the verifiers they choose; verifying means
+    // pasting the config you were given. This page never fetches it.
 
     function renderResult(v) {
       const result = document.getElementById('verifyResult');

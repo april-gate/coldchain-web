@@ -19,6 +19,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
   CONFIG_VERSION,
+  SUPPORTED_CONFIG_VERSIONS,
   canonicalConfigString,
   configCommitmentHex,
 } from "../public/shared/shipment-config.js";
@@ -47,8 +48,10 @@ const EXPECTED_STRING =
 const EXPECTED_SHA256 =
   "1922073e5ba28416fc0006bb2240af0f8749bfd4b89f058bd63eb7f37cbbfe1b";
 
-test("version is v1.0", () => {
-  assert.equal(CONFIG_VERSION, "v1.0");
+test("v1.0 is still supported; new shipments are created as v2.0", () => {
+  // v1.0 shipments are anchored on devnet and used in demos. Never drop it.
+  assert.ok(SUPPORTED_CONFIG_VERSIONS.includes("v1.0"));
+  assert.equal(CONFIG_VERSION, "v2.0");
 });
 
 test("canonicalizes the pinned document to the exact expected string", () => {
@@ -128,7 +131,7 @@ test("a missing committed field is rejected, not silently defaulted", () => {
 });
 
 test("a document of another version is rejected", () => {
-  assert.throws(() => canonicalConfigString({ ...DOC, version: "v2.0" }), /version/i);
+  assert.throws(() => canonicalConfigString({ ...DOC, version: "v3.0" }), /version/i);
   assert.throws(() => canonicalConfigString({ ...DOC, version: 1 }), /version/i);
 });
 
@@ -146,4 +149,89 @@ test("empty strings are legal values, not missing fields", async () => {
   const blank = { ...DOC, notes: "", origin: "", destination: "" };
   assert.doesNotThrow(() => canonicalConfigString(blank));
   assert.notEqual(await configCommitmentHex(blank), EXPECTED_SHA256);
+});
+
+// ── v1.0 documents must not change when v2.0 exists ──────────────────────────
+
+test("v1.0 ignores traceability fields — an old document's commitment cannot shift", async () => {
+  // Even if someone adds v2.0 fields to a v1.0 document, v1.0 rules apply.
+  const withExtras = { ...DOC, traceability_lot_code: "LOT-88", product: "x", quantity: 1, quantity_unit: "kg" };
+  assert.equal(canonicalConfigString(withExtras), EXPECTED_STRING);
+  assert.equal(await configCommitmentHex(withExtras), EXPECTED_SHA256);
+});
+
+// ── v2.0: v1.0 fields + optional traceability fields ────────────────────────
+// Hand-computed and pinned, same as v1.0. Do not regenerate from the code.
+
+const DOC_V2 = {
+  ...DOC,
+  version: "v2.0",
+  traceability_lot_code: "LOT-88",
+  product: "Insulin pens",
+  quantity: 120,
+  quantity_unit: "cases",
+};
+const EXPECTED_V2_STRING =
+  '{"version":"v2.0","shipment_id":"EbSKKfH6qWe5ZzFpPys4cj9qyEoAb3jkxze5R7rbUvmq",' +
+  '"name":"Vaccine Lot 88","tier":"Assured","temp_c_min":2,"temp_c_max":8,' +
+  '"num_devices":4,"duration_days":5,"origin":"Chicago","destination":"Denver",' +
+  '"notes":"handle cold","traceability_lot_code":"LOT-88","product":"Insulin pens",' +
+  '"quantity":120,"quantity_unit":"cases"}';
+const EXPECTED_V2_SHA256 =
+  "eaf9f3bbdc994db0d2b0d3b7416f60f351967c3ce877a0ae6af7f00fdfd54d9f";
+
+// v2.0 with no traceability fields filled in.
+const EXPECTED_V2_BARE_STRING =
+  '{"version":"v2.0","shipment_id":"EbSKKfH6qWe5ZzFpPys4cj9qyEoAb3jkxze5R7rbUvmq",' +
+  '"name":"Vaccine Lot 88","tier":"Assured","temp_c_min":2,"temp_c_max":8,' +
+  '"num_devices":4,"duration_days":5,"origin":"Chicago","destination":"Denver",' +
+  '"notes":"handle cold"}';
+const EXPECTED_V2_BARE_SHA256 =
+  "34b5734b85235cdfc74f7621b09f5488b842107880d3636c4cddf7f15a709e48";
+
+test("v2.0 canonicalizes to the pinned string and hash", async () => {
+  assert.equal(canonicalConfigString(DOC_V2), EXPECTED_V2_STRING);
+  assert.equal(await configCommitmentHex(DOC_V2), EXPECTED_V2_SHA256);
+  assert.equal(
+    createHash("sha256").update(EXPECTED_V2_STRING, "utf8").digest("hex"),
+    EXPECTED_V2_SHA256
+  );
+});
+
+test("v2.0 empty optional fields are omitted, not serialized as empty strings", async () => {
+  const bare = { ...DOC, version: "v2.0" };
+  const blanks = { ...bare, traceability_lot_code: "", product: "   ", quantity: null, quantity_unit: undefined };
+  for (const d of [bare, blanks]) {
+    assert.equal(canonicalConfigString(d), EXPECTED_V2_BARE_STRING);
+    assert.equal(await configCommitmentHex(d), EXPECTED_V2_BARE_SHA256);
+  }
+});
+
+test("v2.0 key order and quoted quantity do not change the commitment", async () => {
+  const reordered = Object.fromEntries(Object.entries(DOC_V2).reverse());
+  assert.equal(await configCommitmentHex(reordered), EXPECTED_V2_SHA256);
+  assert.equal(await configCommitmentHex({ ...DOC_V2, quantity: "120" }), EXPECTED_V2_SHA256);
+});
+
+test("v2.0 traceability fields are covered by the commitment", async () => {
+  for (const [field, value] of [
+    ["traceability_lot_code", "LOT-89"], ["product", "Insulin vials"],
+    ["quantity", 121], ["quantity_unit", "pallets"],
+  ]) {
+    assert.notEqual(await configCommitmentHex({ ...DOC_V2, [field]: value }), EXPECTED_V2_SHA256,
+      `${field} must be covered by the commitment`);
+  }
+});
+
+test("v2.0 rejects a non-numeric quantity", () => {
+  assert.throws(() => canonicalConfigString({ ...DOC_V2, quantity: "a dozen" }), /quantity/);
+});
+
+test("v2.0 still requires every v1.0 field", () => {
+  for (const field of Object.keys(DOC)) {
+    if (field === "version") continue;
+    const partial = { ...DOC_V2 };
+    delete partial[field];
+    assert.throws(() => canonicalConfigString(partial), /shipment configuration/i);
+  }
 });
